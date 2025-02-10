@@ -70,3 +70,14 @@ def update_sources(sources):
             continue
 
     return True
+
+
+def write_links(kw_link):
+    sheet_id = os.getenv('GOOGLE_SHEET_ID')
+    wb = client.open_by_key(sheet_id)
+    sheet = wb.worksheet('News Links')
+
+    for en, cat in enumerate(kw_link.keys()):
+        sheet.update_cell(en+2, 1, cat)
+        for e, i in enumerate(kw_link[cat]):
+            sheet.update_cell(en+2, e+3, i)

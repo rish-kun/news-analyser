@@ -33,13 +33,20 @@ the_hindu_feeds = {
 # 'summary', 'title', 'link'
 
 def check_keywords(keywords):
-    e_s = {} #dict of format "kwd":"link"\
+    e_s = {} #dict of format "kwd":["entry", "entry", "entry"]
     feeds = list(the_hindu_feeds.values())+ list(et_feeds.values())+list(toi_feeds.values())
     for feed in feeds:
         for entry in feedparser.parse(feed).entries:
             for keyword in keywords:
                 if keyword in entry.title or keyword in entry.summary:
-                    e_s[keyword] = [entry.link] + e_s.get(keyword,[])   
+                    e_s[keyword] = [entry] + e_s.get(keyword,[])   
     print(e_s)
     return e_s
 
+# feeds = list(the_hindu_feeds.values())+ list(et_feeds.values())+list(toi_feeds.values())
+# for feed in feeds:
+#     for entry in feedparser.parse(feed).entries[:1]:
+#         print(entry.title)
+#         print(entry.link)
+#         print(entry['published'])
+#         print("\n\n")

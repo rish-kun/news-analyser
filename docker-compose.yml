@@ -1,0 +1,19 @@
+services:
+  blackbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5959:8080"
+    volumes:
+      - static_volume:/home/app/web/staticfiles
+    entrypoint: [
+        "/bin/sh",
+        "-c",
+        "python manage.py makemigrations &&
+        python manage.py migrate &&
+        python manage.py runserver 0.0.0.0:8080",
+      ]
+
+volumes:
+  static_volume:

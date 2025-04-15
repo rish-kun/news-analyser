@@ -1,7 +1,13 @@
 from django.urls import path
-from .views import SearchView, all_searches
-app_name="news_analyser"
+from .views import *
+app_name = "news_analyser"
 urlpatterns = [
     path("", SearchView.as_view(), name="search"),
     path("all_searches/", all_searches, name="all_searches"),
+    path("loading/", loading, name="loading"),
+    path("sector/", SectorView.as_view(), name="sector"),
+    path("news_analysis/<int:news_id>/",
+         NewsAnalysisView.as_view(), name="news_analysis"),
+    path("news_analysis/<int:news_id>/get_content/",
+         get_content, name="get_content"),
 ]

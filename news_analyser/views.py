@@ -1,15 +1,26 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.views import View
 from .rss import check_keywords
 from .models import News, Keyword
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-import time
 from django.http import JsonResponse
 import asyncio
+from django.contrib import messages
+
+
+def search_result(request, news_id=None):
+    kwd = Keyword.objects.get(id=news_id)
+    kw_link = {kwd: kwd.news.all()}
+    if request.GET.get("pending"):
+        messages.info(
+            request, "Pending, all news are not analysed yet. Pls reload after a while")
+    return render(request, "news_analyser/result.html", {"kw_link": kw_link})
 
 
 class SearchView(View):
+
     def get(self, request):
         return render(request, "news_analyser/search.html")
 
@@ -29,6 +40,7 @@ class SearchView(View):
             for i in n:
                 i.analyse_news()
                 print(i.impact_rating)
+        return redirect(reverse("news_analyser:search_results", args=[k_obj.id]))
         return render(request, "news_analyser/result.html", {"kw_link": kwd_link})
 # if there are multiple keywords, then the news should be the intersection of the news
 # implement asyn

@@ -12,7 +12,7 @@
             Search News
         </h1>
         
-        <form method="POST" id="search-form" class="space-y-6">
+        <form method="POST" id="search-form" class="space-y-6" action="{% url 'news_analyser:search' %}">
             {% csrf_token %}
             
             <div class="space-y-2">
@@ -316,11 +316,12 @@
         // Simulate progress through each step
         function simulateStep(stepIndex) {
             if (stepIndex >= steps.length) {
+                keyword = "{{ keyword }}";
                 // All steps completed, redirect to results
-                /*setTimeout(() => {
-                    window.location.href = "{% url 'news_analyser:search' %}"; // Redirect to search results page
-                }, 100000);
-                return;*/
+                setTimeout(() => {
+                    window.location.href = "{% url 'news_analyser:all_searches' %}"; // Redirect to search results page
+                }, 200000);
+                return;
             }
             
             currentStep = stepIndex;

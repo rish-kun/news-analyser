@@ -53,12 +53,70 @@
         {% if messages %}
             <div class="mb-8">
                 {% for message in messages %}
-                    <div class="p-4 rounded-md {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
-                        {{ message }}
+                    <div class="flex items-center p-4 mb-4 rounded-lg shadow-md border-l-4 transition-all duration-300 ease-in-out transform hover:scale-[1.01] 
+                        {% if message.tags == 'success' %}
+                            bg-green-50 text-green-800 border-green-500
+                        {% elif message.tags == 'error' %}
+                            bg-red-50 text-red-800 border-red-500
+                        {% elif message.tags == 'warning' %}
+                            bg-yellow-50 text-yellow-800 border-yellow-500
+                        {% elif message.tags == 'info' %}
+                            bg-blue-50 text-blue-800 border-blue-500
+                        {% else %}
+                            bg-gray-50 text-gray-800 border-gray-500
+                        {% endif %}">
+                        
+                        <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 mr-3 rounded-lg
+                            {% if message.tags == 'success' %}
+                                text-green-500 bg-green-100
+                            {% elif message.tags == 'error' %}
+                                text-red-500 bg-red-100
+                            {% elif message.tags == 'warning' %}
+                                text-yellow-500 bg-yellow-100
+                            {% elif message.tags == 'info' %}
+                                text-blue-500 bg-blue-100
+                            {% else %}
+                                text-gray-500 bg-gray-100
+                            {% endif %}">
+                            
+                            {% if message.tags == 'success' %}
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% elif message.tags == 'error' %}
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% elif message.tags == 'warning' %}
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% elif message.tags == 'info' %}
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% else %}
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </div>
+                        <div class="text-sm font-medium">{{ message }}</div>
+                        <button type="button" class="ml-auto -mx-1.5 -my-1.5 rounded-lg focus:ring-2 p-1.5 inline-flex h-8 w-8 hover:bg-gray-100 focus:outline-none focus:ring-gray-300" 
+                            onclick="this.parentElement.remove()" aria-label="Close">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
                     </div>
                 {% endfor %}
             </div>
         {% endif %}
+
+        <!-- Global Message Box (can be triggered via JavaScript) -->
+        <div id="global-message-box" class="fixed top-5 right-5 z-50 w-96 transform transition-transform duration-300 translate-x-full">
+            <!-- Message will be inserted here via JavaScript -->
+        </div>
 
         {% block content %}{% endblock %}
     </main>
@@ -87,6 +145,132 @@
         document.querySelector('.mobile-menu-button').addEventListener('click', function() {
             document.querySelector('.mobile-menu').classList.toggle('hidden');
         });
+
+        // Global Message Box Functionality
+        const messageBox = {
+            container: document.getElementById('global-message-box'),
+            
+            /* 
+            * Message Box Usage:
+            * 
+            * 1. From JavaScript:
+            *    messageBox.show('Your message here', 'success|error|warning|info', durationInMs);
+            *
+            * 2. From Django views:
+            *    from django.contrib import messages
+            *    messages.success(request, "Operation completed successfully!")
+            *    messages.error(request, "Something went wrong!")
+            *    messages.warning(request, "Please be careful!")
+            *    messages.info(request, "Just letting you know...")
+            */
+            
+            show: function(message, type = 'info', duration = 5000) {
+                // Define colors based on message type
+                const colors = {
+                    'success': {
+                        bg: 'bg-green-50',
+                        border: 'border-green-500',
+                        text: 'text-green-800',
+                        iconBg: 'bg-green-100',
+                        iconText: 'text-green-500'
+                    },
+                    'error': {
+                        bg: 'bg-red-50',
+                        border: 'border-red-500',
+                        text: 'text-red-800',
+                        iconBg: 'bg-red-100',
+                        iconText: 'text-red-500'
+                    },
+                    'warning': {
+                        bg: 'bg-yellow-50',
+                        border: 'border-yellow-500',
+                        text: 'text-yellow-800',
+                        iconBg: 'bg-yellow-100',
+                        iconText: 'text-yellow-500'
+                    },
+                    'info': {
+                        bg: 'bg-blue-50',
+                        border: 'border-blue-500',
+                        text: 'text-blue-800',
+                        iconBg: 'bg-blue-100',
+                        iconText: 'text-blue-500'
+                    }
+                };
+                
+                // Get colors for this message type (default to info if not found)
+                const style = colors[type] || colors['info'];
+                
+                // Create SVG based on message type
+                let svg = '';
+                if (type === 'success') {
+                    svg = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
+                } else if (type === 'error') {
+                    svg = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>';
+                } else if (type === 'warning') {
+                    svg = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>';
+                } else {
+                    svg = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>';
+                }
+                
+                // Clear existing messages
+                this.container.innerHTML = '';
+                
+                // Create message element
+                const messageElement = document.createElement('div');
+                messageElement.className = `flex items-center p-4 mb-4 rounded-lg shadow-md border-l-4 ${style.bg} ${style.text} ${style.border} transition-all duration-300 ease-in-out transform`;
+                
+                messageElement.innerHTML = `
+                    <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 mr-3 rounded-lg ${style.iconBg} ${style.iconText}">
+                        ${svg}
+                    </div>
+                    <div class="text-sm font-medium">${message}</div>
+                    <button type="button" class="ml-auto -mx-1.5 -my-1.5 rounded-lg focus:ring-2 p-1.5 inline-flex h-8 w-8 hover:bg-gray-100 focus:outline-none focus:ring-gray-300" aria-label="Close">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                `;
+                
+                // Add close button functionality
+                messageElement.querySelector('button').addEventListener('click', () => this.hide());
+                
+                // Add to container
+                this.container.appendChild(messageElement);
+                
+                // Show message with animation
+                setTimeout(() => {
+                    this.container.classList.remove('translate-x-full');
+                    this.container.classList.add('translate-x-0');
+                }, 100);
+                
+                // Auto-hide after duration (if duration > 0)
+                if (duration > 0) {
+                    this.autoHideTimer = setTimeout(() => this.hide(), duration);
+                }
+            },
+            
+            hide: function() {
+                // Clear any pending auto-hide
+                if (this.autoHideTimer) {
+                    clearTimeout(this.autoHideTimer);
+                }
+                
+                // Hide with animation
+                this.container.classList.remove('translate-x-0');
+                this.container.classList.add('translate-x-full');
+                
+                // Clear content after animation completes
+                setTimeout(() => {
+                    this.container.innerHTML = '';
+                }, 300);
+            }
+        };
+
+        // Example usage:
+        // messageBox.show('Operation completed successfully!', 'success');
+        // messageBox.show('Something went wrong!', 'error');
+        // messageBox.show('Please be careful!', 'warning');
+        // messageBox.show('Just letting you know...', 'info');
     </script>
 </body>
 </html>

@@ -51,7 +51,6 @@ def all_searches(request):
     searches = {}
     for kwd in kwds:
         searches[kwd] = kwd.news.all()
-
     return render(request, "news_analyser/result.html", {"kw_link": searches})
 
 

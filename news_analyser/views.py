@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.views import View
 from .rss import check_keywords
 from .models import News, Keyword
+from .tasks import analyse_news_task
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -38,10 +39,8 @@ class SearchView(View):
 
         for k, n in kwd_link.items():
             for i in n:
-                i.analyse_news()
-                print(i.impact_rating)
-        return redirect(reverse("news_analyser:search_results", args=[k_obj.id]))
-        return render(request, "news_analyser/result.html", {"kw_link": kwd_link})
+                analyse_news_task.delay(i.id)
+        return redirect(reverse("news_analyser:loading", args=[k_obj.id]))
 # if there are multiple keywords, then the news should be the intersection of the news
 # implement asyn
 
@@ -54,8 +53,16 @@ def all_searches(request):
     return render(request, "news_analyser/result.html", {"kw_link": searches})
 
 
-def loading(request):
-    return render(request, "news_analyser/stock_loading.html")
+def loading(request, keyword_id):
+    return render(request, "news_analyser/loading.html", {"keyword_id": keyword_id})
+
+
+def task_status(request, keyword_id):
+    keyword = Keyword.objects.get(id=keyword_id)
+    news = keyword.news.all()
+    total_news = news.count()
+    analysed_news = news.exclude(impact_rating=0).count()
+    return JsonResponse({"total_news": total_news, "analysed_news": analysed_news})
 
 
 class SectorView(View):

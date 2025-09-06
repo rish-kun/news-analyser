@@ -1,6 +1,7 @@
 # News Analyser
 
 A modern Django-based web application that monitors and analyzes financial news sentiment in real time, connects stories to user-selected stocks, and provides actionable summaries with market impact scoring.
+Handles the news related to the Indian Stock market. 
 
 ## Main Features
 

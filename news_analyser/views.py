@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
 from .rss import check_keywords
-from .models import News, Keyword, UserProfile
+from .models import News, Keyword, UserProfile, Stock
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -60,8 +60,6 @@ class SearchView(LoginRequiredMixin, View):
         else:
             messages.info(request, "No news found for the given keywords.")
             return redirect(reverse("news_analyser:search"))
-# if there are multiple keywords, then the news should be the intersection of the news
-# implement asyn
 
 
 @login_required

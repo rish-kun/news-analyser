@@ -252,18 +252,29 @@
         const keywordSearchDiv = document.getElementById('keyword-search-div');
         const stockSearchDiv = document.getElementById('stock-search-div');
         const searchTypeRadios = document.querySelectorAll('input[name="search_type"]');
+        const keywordInput = document.getElementById('keyword');
+        const stockCheckboxes = document.querySelectorAll('input[name="stocks"]');
+
+        function toggleSearchType() {
+            if (document.querySelector('input[name="search_type"]:checked').value === 'keyword') {
+                keywordSearchDiv.classList.remove('hidden');
+                stockSearchDiv.classList.add('hidden');
+                keywordInput.required = true;
+                stockCheckboxes.forEach(checkbox => checkbox.required = false);
+            } else {
+                keywordSearchDiv.classList.add('hidden');
+                stockSearchDiv.classList.remove('hidden');
+                keywordInput.required = false;
+                const atLeastOneChecked = [...stockCheckboxes].some(checkbox => checkbox.checked);
+                stockCheckboxes.forEach(checkbox => checkbox.required = !atLeastOneChecked);
+            }
+        }
 
         searchTypeRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (this.value === 'keyword') {
-                    keywordSearchDiv.classList.remove('hidden');
-                    stockSearchDiv.classList.add('hidden');
-                } else {
-                    keywordSearchDiv.classList.add('hidden');
-                    stockSearchDiv.classList.remove('hidden');
-                }
-            });
+            radio.addEventListener('change', toggleSearchType);
         });
+
+        toggleSearchType(); // Initial call
     });
 </script>
 {% endblock %}

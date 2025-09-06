@@ -75,19 +75,15 @@ class News(models.Model):
         if user and hasattr(user, 'profile') and user.profile.preferences.get('gemini_api_key'):
             api_key = user.profile.preferences.get('gemini_api_key')
 
+        if not api_key:
+            return
+
         client = genai.Client(api_key=api_key)
         prompt = news_analysis_prompt.format(
             title=self.title, content_summary=self.content_summary, content=self.content)
         while True:
             try:
                 analysis = client.models.generate_content(
-                    model="gemini-2.0-flash-thinking-exp-01-21", contents=prompt)
-                self.impact_rating = float(analysis.text)
-                self.save()
-            except genai.errors.ClientError:
-                alt_api_key = os.getenv("GEMINI_API_KEY_2")
-                client2 = genai.Client(api_key=alt_api_key)
-                analysis = client2.models.generate_content(
                     model="gemini-2.0-flash-thinking-exp-01-21", contents=prompt)
                 self.impact_rating = float(analysis.text)
                 self.save()

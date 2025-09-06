@@ -26,6 +26,15 @@
                 <div class="hidden sm:flex sm:items-center sm:space-x-4">
                     <a href="{% url 'news_analyser:search' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Search</a>
                     <a href="{% url 'news_analyser:all_searches' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">History</a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'news_analyser:add_stocks' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Add Stocks</a>
+                        <a href="{% url 'news_analyser:past_searches' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Past Searches</a>
+                        <a href="{% url 'news_analyser:user_settings' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Settings</a>
+                        <a href="{% url 'logout' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Logout</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Login</a>
+                        <a href="{% url 'register' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Register</a>
+                    {% endif %}
                 </div>
 
                 <!-- Mobile menu button -->
@@ -44,6 +53,15 @@
             <div class="px-2 pt-2 pb-3 space-y-1">
                 <a href="{% url 'news_analyser:search' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Search</a>
                 <a href="{% url 'news_analyser:all_searches' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">History</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'news_analyser:add_stocks' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Add Stocks</a>
+                    <a href="{% url 'news_analyser:past_searches' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Past Searches</a>
+                    <a href="{% url 'news_analyser:user_settings' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Settings</a>
+                    <a href="{% url 'logout' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Logout</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Login</a>
+                    <a href="{% url 'register' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Register</a>
+                {% endif %}
             </div>
         </div>
     </nav>

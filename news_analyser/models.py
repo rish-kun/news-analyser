@@ -70,8 +70,12 @@ class News(models.Model):
             obj.save()
         return obj
 
-    def analyse_news(self):
-        client = genai.Client(api_key=GEMINI_API_KEY)
+    def analyse_news(self, user=None):
+        api_key = GEMINI_API_KEY
+        if user and hasattr(user, 'profile') and user.profile.preferences.get('gemini_api_key'):
+            api_key = user.profile.preferences.get('gemini_api_key')
+
+        client = genai.Client(api_key=api_key)
         prompt = news_analysis_prompt.format(
             title=self.title, content_summary=self.content_summary, content=self.content)
         while True:

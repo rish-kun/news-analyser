@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Past Searches</h2>
+  <ul>
+    {% for search in searches %}
+      <li><a href="{% url 'news_analyser:search_results' search.id %}">{{ search.name }}</a></li>
+    {% empty %}
+      <li>You have no past searches.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

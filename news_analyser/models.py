@@ -1,4 +1,3 @@
-import asyncio
 from .prompts import news_analysis_prompt
 from django.utils import timezone
 from django.db import models
@@ -17,6 +16,17 @@ class Keyword(models.Model):
 
     def get_news(self):
         return {self: self.news.all()}
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(
+        'auth.User', on_delete=models.CASCADE, related_name='profile')
+    preferences = models.JSONField(default=dict, blank=True)
+    stocks = models.ManyToManyField('Stock', blank=True)
+    searches = models.ManyToManyField(Keyword, blank=True)
+
+    def __str__(self):
+        return f"Profile of {self.user.username}"
 
 
 class News(models.Model):
@@ -87,6 +97,20 @@ class News(models.Model):
         from .br_use import get_news
         content = await get_news(self.link)
         return content
+
+
+class Sector(models.Model):
+    name = models.CharField(max_length=200)
+    search_fields = models.CharField(max_length=8000, null=True, blank=True)
+
+
+class Stock(models.Model):
+    name = models.CharField(max_length=200)
+    symbol = models.CharField(max_length=20)
+    sector = models.ForeignKey(
+        Sector, on_delete=models.CASCADE, related_name="stocks", null=True, blank=True)
+    keywords = models.ManyToManyField(
+        Keyword, blank=True, related_name="stocks")
 
 
 class Source(models.Model):

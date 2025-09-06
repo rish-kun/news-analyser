@@ -5,8 +5,17 @@ from news_analyser.models import Stock
 class Command(BaseCommand):
     help = 'Populate stocks from a CSV file'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--csv',
+            type=str,
+            default='Ticker_List_NSE_India.csv',
+            help='Path to the CSV file containing stock data'
+        )
+
     def handle(self, *args, **kwargs):
-        with open('Ticker_List_NSE_India.csv', 'r') as file:
+        csv_path = kwargs.get('csv', 'Ticker_List_NSE_India.csv')
+        with open(csv_path, 'r') as file:
             reader = csv.reader(file)
             next(reader)  # Skip header row
             for row in reader:

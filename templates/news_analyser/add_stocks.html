@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Add Stocks{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">Add Stocks</h1>
+    <div class="mb-4">
+        <input type="text" id="stock-search" placeholder="Search for stocks..."
+               class="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <div id="stock-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {% for stock in stocks %}
+            <div class="flex items-center stock-item">
+                <input type="checkbox" name="stocks" value="{{ stock.id }}" id="stock-{{ stock.id }}" {% if stock.id in user_stocks %}checked{% endif %}
+                       class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                <label for="stock-{{ stock.id }}" class="ml-2 block text-sm text-gray-900">
+                    {{ stock.name }} ({{ stock.symbol }})
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="flex items-center justify-end mt-6">
+            <button type="submit"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Save
+            </button>
+        </div>
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('stock-search');
+    const stockItems = document.querySelectorAll('.stock-item');
+
+    searchInput.addEventListener('keyup', function() {
+        const filter = searchInput.value.toLowerCase();
+        stockItems.forEach(function(item) {
+            const label = item.querySelector('label');
+            const txtValue = label.textContent || label.innerText;
+            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                item.style.display = "";
+            } else {
+                item.style.display = "none";
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

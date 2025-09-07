@@ -129,6 +129,3 @@ LOGOUT_REDIRECT_URL = 'login'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ALLOWED_HOSTS = ['*']
-# CSRF_COOKIE_DOMAIN = 'news-analyser.rish-kun.live'
-# CSRF_TRUSTED_ORIGINS = ['https://news-analyser.rish-kun.live',
-#                         'http://localhost:8000', 'http://news-analyser.rish-kun.live',]

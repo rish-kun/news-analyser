@@ -33,41 +33,14 @@ class News(models.Model):
     content_summary = models.TextField()
     content = models.TextField(null=True, blank=True)
     date = models.DateTimeField(default=timezone.now)
-    link = models.CharField(max_length=200)
-    keyword = models.ForeignKey(
-        Keyword, on_delete=models.CASCADE, related_name="news")
+    link = models.CharField(max_length=200, unique=True)
+    keywords = models.ManyToManyField(Keyword, related_name="news")
     impact_rating = models.FloatField(default=0)
     source = models.ForeignKey(
         "Source", on_delete=models.CASCADE, related_name="news", default=None, null=True)
 
     def __str__(self):
         return self.title
-
-    @staticmethod
-    def parse_news(news, kwd):
-        obj, created = News.objects.get_or_create(title=news['title'],
-                                                  content_summary=news['summary'],
-                                                  link=news['link'],
-                                                  keyword=kwd)
-        try:
-            date = parsedate_to_datetime(news['published'])
-
-        except:
-            date = timezone.now()
-        if "economc" in obj.link and "times" in obj.link:
-            obj.source = Source.objects.get(id_name="ET")
-        elif "times" in obj.link and "india" in obj.link and "of" in obj.link:
-            obj.source = Source.objects.get(id_name="TOI")
-        elif "hindu" in obj.link:
-            obj.source = Source.objects.get(id_name="TH")
-        else:
-            obj.source = Source.objects.get(id_name="OTHER")
-
-        obj.keyword = kwd
-        if created:
-            obj.date = date
-            obj.save()
-        return obj
 
     async def get_content(self):
         from .br_use import get_news

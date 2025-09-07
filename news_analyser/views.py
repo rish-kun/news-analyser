@@ -1,10 +1,8 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
-from .rss import check_keywords
-from .models import News, Keyword
-from .tasks import analyse_news_task
 from .models import News, Keyword, UserProfile, Stock
+from .tasks import analyse_news_task
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -36,39 +34,27 @@ class SearchView(LoginRequiredMixin, View):
     def post(self, request):
         search_type = request.POST.get("search_type")
         if search_type == "keyword":
-            kwds = request.POST.get("keyword").split(",")
+            kwds = [k.strip() for k in request.POST.get("keyword").split(",")]
         else:
-            kwds = request.POST.getlist("stocks")
+            stock_ids = request.POST.getlist("stocks")
+            kwds = list(Stock.objects.filter(id__in=stock_ids).values_list('name', flat=True))
 
-        search_type = request.POST.get("search_type")
-        if search_type == "keyword":
-            kwds = request.POST.get("keyword").split(",")
-        else:
-            kwds = request.POST.getlist("stocks")
-
-        news = check_keywords(kwds)
-        kwd_link = {}
-        print("news", news)
-        k_obj = None
-        for k, n in news.items():
-            print("in the loop")
-            k_obj, created = Keyword.objects.get_or_create(name=k)
+        # Save keywords and associate with user
+        keyword_objs = []
+        for k_name in kwds:
+            k_obj, created = Keyword.objects.get_or_create(name=k_name)
             request.user.profile.searches.add(k_obj)
-            if created:
-                k_obj.save()
-            for i in n:
-                n_obj = News.parse_news(i, k_obj)
-                kwd_link[k] = [n_obj] + kwd_link.get(k, [])
+            keyword_objs.append(k_obj)
 
-        for k, n in kwd_link.items():
-            for i in n:
-                analyse_news_task.delay(i.id)
-                print(i.impact_rating)
+        # Query the database for news related to the keywords
+        news_items = News.objects.filter(keywords__in=keyword_objs).distinct()
 
-        if k_obj:
-            return redirect(reverse("news_analyser:search_results", args=[k_obj.id]))
+        if news_items.exists():
+            # For simplicity, we'll redirect to the results page of the first keyword
+            # A more advanced implementation could show results for all keywords
+            return redirect(reverse("news_analyser:search_results", args=[keyword_objs[0].id]))
         else:
-            messages.info(request, "No news found for the given keywords.")
+            messages.info(request, "No news found for the given keywords in our database. Please check back later or try different keywords.")
             return redirect(reverse("news_analyser:search"))
 # if there are multiple keywords, then the news should be the intersection of the news
 # implement asyn

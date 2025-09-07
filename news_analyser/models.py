@@ -2,8 +2,6 @@ from .prompts import news_analysis_prompt
 from django.utils import timezone
 from django.db import models
 from email.utils import parsedate_to_datetime
-from google import genai
-import os
 from blackbox.settings import GEMINI_API_KEY
 
 
@@ -70,29 +68,6 @@ class News(models.Model):
             obj.date = date
             obj.save()
         return obj
-
-    def analyse_news(self, user=None):
-        api_key = GEMINI_API_KEY
-        if user and hasattr(user, 'profile') and user.profile.preferences.get('gemini_api_key'):
-            api_key = user.profile.preferences.get('gemini_api_key')
-
-        if not api_key:
-            return
-
-        client = genai.Client(api_key=api_key)
-        prompt = news_analysis_prompt.format(
-            title=self.title, content_summary=self.content_summary, content=self.content)
-        while True:
-            try:
-                analysis = client.models.generate_content(
-                    model="gemini-2.0-flash-thinking-exp-01-21", contents=prompt)
-                self.impact_rating = float(analysis.text)
-                self.save()
-            except Exception as e:
-                print(e)
-                return "Error"
-            else:
-                break
 
     async def get_content(self):
         from .br_use import get_news

@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
 from .rss import check_keywords
+from .models import News, Keyword
+from .tasks import analyse_news_task
 from .models import News, Keyword, UserProfile, Stock
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -38,11 +40,19 @@ class SearchView(LoginRequiredMixin, View):
         else:
             kwds = request.POST.getlist("stocks")
 
+        search_type = request.POST.get("search_type")
+        if search_type == "keyword":
+            kwds = request.POST.get("keyword").split(",")
+        else:
+            kwds = request.POST.getlist("stocks")
+
         news = check_keywords(kwds)
         kwd_link = {}
         k_obj = None
+        k_obj = None
         for k, n in news.items():
             k_obj, created = Keyword.objects.get_or_create(name=k)
+            request.user.profile.searches.add(k_obj)
             request.user.profile.searches.add(k_obj)
             if created:
                 k_obj.save()
@@ -52,8 +62,17 @@ class SearchView(LoginRequiredMixin, View):
 
         for k, n in kwd_link.items():
             for i in n:
+                analyse_news_task.delay(i.id)
                 i.analyse_news(user=request.user)
                 print(i.impact_rating)
+
+        if k_obj:
+            return redirect(reverse("news_analyser:search_results", args=[k_obj.id]))
+        else:
+            messages.info(request, "No news found for the given keywords.")
+            return redirect(reverse("news_analyser:search"))
+# if there are multiple keywords, then the news should be the intersection of the news
+# implement asyn
 
         if k_obj:
             return redirect(reverse("news_analyser:search_results", args=[k_obj.id]))
@@ -71,8 +90,16 @@ def all_searches(request):
     return render(request, "news_analyser/result.html", {"kw_link": searches})
 
 
-def loading(request):
-    return render(request, "news_analyser/stock_loading.html")
+def loading(request, keyword_id):
+    return render(request, "news_analyser/loading.html", {"keyword_id": keyword_id})
+
+
+def task_status(request, keyword_id):
+    keyword = Keyword.objects.get(id=keyword_id)
+    news = keyword.news.all()
+    total_news = news.count()
+    analysed_news = news.exclude(impact_rating=0).count()
+    return JsonResponse({"total_news": total_news, "analysed_news": analysed_news})
 
 
 class SectorView(LoginRequiredMixin, View):

@@ -36,26 +36,25 @@ class SearchView(LoginRequiredMixin, View):
         if search_type == "keyword":
             kwds = [k.strip() for k in request.POST.get("keyword").split(",")]
         else:
-            stock_ids = request.POST.getlist("stocks")
-            kwds = list(Stock.objects.filter(id__in=stock_ids).values_list('name', flat=True))
+            stock_symbols = request.POST.getlist("stocks")
+            kwds = list(Stock.objects.filter(symbol__in=stock_symbols).values_list('name', flat=True))
 
-        # Save keywords and associate with user
-        keyword_objs = []
-        for k_name in kwds:
-            k_obj, created = Keyword.objects.get_or_create(name=k_name)
-            request.user.profile.searches.add(k_obj)
-            keyword_objs.append(k_obj)
-
-        # Query the database for news related to the keywords
-        news_items = News.objects.filter(keywords__in=keyword_objs).distinct()
-
-        if news_items.exists():
-            # For simplicity, we'll redirect to the results page of the first keyword
-            # A more advanced implementation could show results for all keywords
-            return redirect(reverse("news_analyser:search_results", args=[keyword_objs[0].id]))
-        else:
-            messages.info(request, "No news found for the given keywords in our database. Please check back later or try different keywords.")
+        # For simplicity, we'll only handle the first keyword for on-demand scraping
+        keyword_name = kwds[0] if kwds else None
+        if not keyword_name:
+            messages.error(request, "Please enter a keyword or select a stock.")
             return redirect(reverse("news_analyser:search"))
+
+        k_obj, created = Keyword.objects.get_or_create(name=keyword_name)
+        request.user.profile.searches.add(k_obj)
+
+        # Check if there is news for this keyword
+        if k_obj.news.exists():
+            return redirect(reverse("news_analyser:search_results", args=[k_obj.id]))
+        else:
+            # No news found, so trigger the scraping task
+            task = scrape_for_keyword_task.delay(keyword_name)
+            return redirect(reverse("news_analyser:loading", args=[task.id]))
 # if there are multiple keywords, then the news should be the intersection of the news
 # implement asyn
 
@@ -151,6 +150,19 @@ def user_settings(request):
         form = UserSettingsForm(
             initial={'gemini_api_key': user_profile.preferences.get('gemini_api_key', '')})
     return render(request, 'news_analyser/user_settings.html', {'form': form})
+
+
+@login_required
+def task_status_view(request, task_id):
+    return render(request, 'news_analyser/loading.html', {'task_id': task_id})
+
+
+@login_required
+def task_status_json(request, task_id):
+    from celery.result import AsyncResult
+    task = AsyncResult(task_id)
+    response_data = {'state': task.state, 'details': task.info}
+    return JsonResponse(response_data)
 
 
 @login_required

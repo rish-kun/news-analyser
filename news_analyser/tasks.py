@@ -52,6 +52,38 @@ def scrape_and_store_news():
     logger.info(f"Scraping task finished. Found {len(articles)} relevant articles.")
 
 
+@shared_task(bind=True)
+def scrape_for_keyword_task(self, keyword_name):
+    """
+    Scrapes news for a specific keyword and updates its state for progress tracking.
+    """
+    self.update_state(state='STARTED', meta={'status': 'Starting scraper...'})
+
+    scraper = NewsScraper([keyword_name])
+    articles = scraper.run()
+
+    total_articles = len(articles)
+    for i, article in enumerate(articles):
+        self.update_state(state='PROGRESS', meta={'status': f'Processing article {i+1}/{total_articles}', 'current': i+1, 'total': total_articles})
+        source, _ = Source.objects.get_or_create(name=article['source'], defaults={'url': article['link']})
+        news_item, created = News.objects.update_or_create(
+            link=article['link'],
+            defaults={
+                'title': article['title'],
+                'content_summary': article['summary'],
+                'source': source,
+            }
+        )
+        kw, _ = Keyword.objects.get_or_create(name=keyword_name)
+        news_item.keywords.add(kw)
+
+        if created:
+            analyse_news_task(news_item.id)
+            logger.info(f"New article found for '{keyword_name}': {article['title']}")
+
+    return {'status': 'Task completed!', 'total': total_articles}
+
+
 @shared_task
 def analyse_news_task(news_id):
     print("Analysing news item with id:", news_id)

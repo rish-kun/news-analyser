@@ -26,11 +26,18 @@ class SearchView(View):
         return render(request, "news_analyser/search.html")
 
     def post(self, request):
-        kwds = request.POST.get("keyword").split(",")
+        search_type = request.POST.get("search_type")
+        if search_type == "keyword":
+            kwds = request.POST.get("keyword").split(",")
+        else:
+            kwds = request.POST.getlist("stocks")
+
         news = check_keywords(kwds)
         kwd_link = {}
+        k_obj = None
         for k, n in news.items():
             k_obj, created = Keyword.objects.get_or_create(name=k)
+            request.user.profile.searches.add(k_obj)
             if created:
                 k_obj.save()
             for i in n:
@@ -40,7 +47,13 @@ class SearchView(View):
         for k, n in kwd_link.items():
             for i in n:
                 analyse_news_task.delay(i.id)
-        return redirect(reverse("news_analyser:loading", args=[k_obj.id]))
+                print(i.impact_rating)
+
+        if k_obj:
+            return redirect(reverse("news_analyser:search_results", args=[k_obj.id]))
+        else:
+            messages.info(request, "No news found for the given keywords.")
+            return redirect(reverse("news_analyser:search"))
 # if there are multiple keywords, then the news should be the intersection of the news
 # implement asyn
 

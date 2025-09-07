@@ -39,7 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'news_analyser'
+    'news_analyser',
+    "django_celery_results",
+
 ]
 
 MIDDLEWARE = [
@@ -128,3 +130,6 @@ ALLOWED_HOSTS = ['*']
 CSRF_COOKIE_DOMAIN = 'news-analyser.rish-kun.live'
 CSRF_TRUSTED_ORIGINS = ['https://news-analyser.rish-kun.live',
                         'http://localhost:8000', 'http://news-analyser.rish-kun.live']
+CELERY_BROKER_URL = "amqp://localhost"   # RabbitMQ
+CELERY_RESULT_BACKEND = "django-db"  # Django database backend
+CELERY_TASK_TRACK_STARTED = True           # keeps PROGRESS state[6]

@@ -23,7 +23,8 @@ class UserProfile(models.Model):
         'auth.User', on_delete=models.CASCADE, related_name='profile')
     preferences = models.JSONField(default=dict, blank=True)
     stocks = models.ManyToManyField('Stock', blank=True)
-    searches = models.ManyToManyField(Keyword, blank=True)
+    searches = models.ManyToManyField(
+        Keyword, blank=True, related_name="users")
 
     def __str__(self):
         return f"Profile of {self.user.username}"
@@ -70,20 +71,20 @@ class News(models.Model):
             obj.save()
         return obj
 
-    def analyse_news(self):
-        client = genai.Client(api_key=GEMINI_API_KEY)
+    def analyse_news(self, user=None):
+        api_key = GEMINI_API_KEY
+        if user and hasattr(user, 'profile') and user.profile.preferences.get('gemini_api_key'):
+            api_key = user.profile.preferences.get('gemini_api_key')
+
+        if not api_key:
+            return
+
+        client = genai.Client(api_key=api_key)
         prompt = news_analysis_prompt.format(
             title=self.title, content_summary=self.content_summary, content=self.content)
         while True:
             try:
                 analysis = client.models.generate_content(
-                    model="gemini-2.0-flash-thinking-exp-01-21", contents=prompt)
-                self.impact_rating = float(analysis.text)
-                self.save()
-            except genai.errors.ClientError:
-                alt_api_key = os.getenv("GEMINI_API_KEY_2")
-                client2 = genai.Client(api_key=alt_api_key)
-                analysis = client2.models.generate_content(
                     model="gemini-2.0-flash-thinking-exp-01-21", contents=prompt)
                 self.impact_rating = float(analysis.text)
                 self.save()

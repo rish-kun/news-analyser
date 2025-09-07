@@ -120,11 +120,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+LOGIN_REDIRECT_URL = 'news_analyser:search'
+LOGIN_URL = 'login'
+LOGOUT_REDIRECT_URL = 'login'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ALLOWED_HOSTS = ['*']
-CSRF_COOKIE_DOMAIN = 'news-analyser.rish-kun.live'
-CSRF_TRUSTED_ORIGINS = ['https://news-analyser.rish-kun.live',
-                        'http://localhost:8000', 'http://news-analyser.rish-kun.live']

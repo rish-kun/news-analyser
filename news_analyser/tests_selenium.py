@@ -1,22 +1,32 @@
 import time
+import tempfile
+import shutil
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.contrib.auth.models import User
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 from .models import Keyword
 
 class NewsAnalyserSeleniumTests(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.selenium = webdriver.Chrome()
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')
+        cls.user_data_dir = tempfile.mkdtemp()
+        options.add_argument(f'--user-data-dir={cls.user_data_dir}')
+        service = ChromeService(executable_path=ChromeDriverManager().install())
+        cls.selenium = webdriver.Chrome(service=service, options=options)
         cls.selenium.implicitly_wait(10)
 
     @classmethod
     def tearDownClass(cls):
         cls.selenium.quit()
+        shutil.rmtree(cls.user_data_dir)
         super().tearDownClass()
 
     def test_search_and_loading(self):

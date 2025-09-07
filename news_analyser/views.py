@@ -48,11 +48,11 @@ class SearchView(LoginRequiredMixin, View):
 
         news = check_keywords(kwds)
         kwd_link = {}
-        k_obj = None
+        print("news", news)
         k_obj = None
         for k, n in news.items():
+            print("in the loop")
             k_obj, created = Keyword.objects.get_or_create(name=k)
-            request.user.profile.searches.add(k_obj)
             request.user.profile.searches.add(k_obj)
             if created:
                 k_obj.save()
@@ -63,7 +63,6 @@ class SearchView(LoginRequiredMixin, View):
         for k, n in kwd_link.items():
             for i in n:
                 analyse_news_task.delay(i.id)
-                i.analyse_news(user=request.user)
                 print(i.impact_rating)
 
         if k_obj:
@@ -73,12 +72,6 @@ class SearchView(LoginRequiredMixin, View):
             return redirect(reverse("news_analyser:search"))
 # if there are multiple keywords, then the news should be the intersection of the news
 # implement asyn
-
-        if k_obj:
-            return redirect(reverse("news_analyser:search_results", args=[k_obj.id]))
-        else:
-            messages.info(request, "No news found for the given keywords.")
-            return redirect(reverse("news_analyser:search"))
 
 
 @login_required
@@ -119,7 +112,7 @@ class NewsAnalysisView(LoginRequiredMixin, View):
 
     def post(self, request, news_id):
         news = News.objects.get(id=news_id)
-        news.analyse_news(user=request.user)
+        analyse_news_task.delay(news.id)
         return render(request, "news_analyser/news_analysis.html", {"news": news})
 
 

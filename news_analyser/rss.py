@@ -42,6 +42,9 @@ def check_keywords(keywords):
             for keyword in keywords:
                 if keyword in entry.title or keyword in entry.summary:
                     e_s[keyword] = [entry] + e_s.get(keyword, [])
+                    print("keyword found")
+                else:
+                    print("not found")
     return e_s
 
 # feeds = list(the_hindu_feeds.values())+ list(et_feeds.values())+list(toi_feeds.values())

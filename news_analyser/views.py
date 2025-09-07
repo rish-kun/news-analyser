@@ -64,7 +64,7 @@ class SearchView(LoginRequiredMixin, View):
 
 @login_required
 def all_searches(request):
-    kwds = Keyword.objects.all()
+    kwds = request.user.profile.searches.all()
     searches = {}
     for kwd in kwds:
         searches[kwd] = kwd.news.all()
@@ -142,7 +142,8 @@ def user_settings(request):
             messages.success(request, 'Your settings have been saved.')
             return redirect('news_analyser:user_settings')
     else:
-        form = UserSettingsForm(initial={'gemini_api_key': user_profile.preferences.get('gemini_api_key', '')})
+        form = UserSettingsForm(
+            initial={'gemini_api_key': user_profile.preferences.get('gemini_api_key', '')})
     return render(request, 'news_analyser/user_settings.html', {'form': form})
 
 

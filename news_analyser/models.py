@@ -23,7 +23,8 @@ class UserProfile(models.Model):
         'auth.User', on_delete=models.CASCADE, related_name='profile')
     preferences = models.JSONField(default=dict, blank=True)
     stocks = models.ManyToManyField('Stock', blank=True)
-    searches = models.ManyToManyField(Keyword, blank=True)
+    searches = models.ManyToManyField(
+        Keyword, blank=True, related_name="users")
 
     def __str__(self):
         return f"Profile of {self.user.username}"

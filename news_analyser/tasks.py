@@ -39,13 +39,10 @@ def scrape_and_store_news():
         )
 
         # Find relevant keywords and add them
-        relevant_keywords = []
-        for keyword in keywords:
-            if scraper.is_relevant(article['title'] + " " + article['summary']):
-                kw, _ = Keyword.objects.get_or_create(name=keyword)
-                relevant_keywords.append(kw)
-
-        news_item.keywords.add(*relevant_keywords)
+        relevant_keyword_names = scraper.is_relevant(article['title'] + " " + article['summary'])
+        if relevant_keyword_names:
+            relevant_keywords = Keyword.objects.filter(name__in=relevant_keyword_names)
+            news_item.keywords.add(*relevant_keywords)
 
         if created:
             # Analyze the news item only if it's new

@@ -73,13 +73,17 @@ class NewsScraper:
         return word
 
     def is_relevant(self, text):
-        """Checks if the text is relevant to any of the keywords using fuzzy matching and stemming."""
+        """
+        Checks if the text is relevant to any of the keywords using fuzzy matching and stemming.
+        Returns a list of matched keywords.
+        """
+        found_keywords = []
         text_stemmed = " ".join([self._stem(word) for word in text.split()])
         for keyword in self.keywords:
             keyword_stemmed = self._stem(keyword)
-            if fuzz.partial_ratio(keyword_stemmed, text_stemmed) > 80: # Threshold can be adjusted
-                return True
-        return False
+            if fuzz.partial_ratio(keyword_stemmed, text_stemmed) > 80:  # Threshold can be adjusted
+                found_keywords.append(keyword)
+        return found_keywords
 
     def fetch_web_bse(self, url):
         """Fetches and parses the BSE India announcements page."""

@@ -40,18 +40,10 @@ class SearchView(LoginRequiredMixin, View):
         else:
             kwds = request.POST.getlist("stocks")
 
-        search_type = request.POST.get("search_type")
-        if search_type == "keyword":
-            kwds = request.POST.get("keyword").split(",")
-        else:
-            kwds = request.POST.getlist("stocks")
-
         news = check_keywords(kwds)
         kwd_link = {}
-        print("news", news)
         k_obj = None
         for k, n in news.items():
-            print("in the loop")
             k_obj, created = Keyword.objects.get_or_create(name=k)
             request.user.profile.searches.add(k_obj)
             if created:
@@ -63,7 +55,6 @@ class SearchView(LoginRequiredMixin, View):
         for k, n in kwd_link.items():
             for i in n:
                 analyse_news_task.delay(i.id)
-                print(i.impact_rating)
 
         if k_obj:
             return redirect(reverse("news_analyser:search_results", args=[k_obj.id]))

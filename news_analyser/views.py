@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
 from .models import News, Keyword, UserProfile, Stock
-from .tasks import analyse_news_task
+from .tasks import analyse_news_task, scrape_for_keyword_task
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse

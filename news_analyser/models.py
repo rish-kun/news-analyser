@@ -54,7 +54,7 @@ class News(models.Model):
 
         except:
             date = timezone.now()
-        if "economc" in obj.link and "times" in obj.link:
+        if "economic" in obj.link and "times" in obj.link:
             obj.source = Source.objects.get(id_name="ET")
         elif "times" in obj.link and "india" in obj.link and "of" in obj.link:
             obj.source = Source.objects.get(id_name="TOI")

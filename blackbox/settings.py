@@ -133,6 +133,7 @@ ALLOWED_HOSTS = ['*']
 CSRF_COOKIE_DOMAIN = 'news-analyser.rish-kun.live'
 CSRF_TRUSTED_ORIGINS = ['https://news-analyser.rish-kun.live',
                         'http://localhost:8000', 'http://news-analyser.rish-kun.live']
-CELERY_BROKER_URL = "amqp://localhost"   # RabbitMQ
+CELERY_BROKER_URL = "django-db"
 CELERY_RESULT_BACKEND = "django-db"  # Django database backend
 CELERY_TASK_TRACK_STARTED = True           # keeps PROGRESS state[6]
+CELERY_TASK_ALWAYS_EAGER = True

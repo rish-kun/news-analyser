@@ -1,71 +1,48 @@
 {% extends 'base.html' %}
 
-{% block title %}Loading - News Analyser{% endblock %}
-
 {% block content %}
-<div class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white p-4">
-    <div class="max-w-md w-full bg-white rounded-xl shadow-lg p-8 relative overflow-hidden">
-        <!-- Header -->
-        <h1 class="text-2xl font-bold text-center text-gray-800 mb-2">Analyzing News</h1>
-        <p class="text-center text-gray-600 mb-8">Please wait while we analyze the latest news for your keywords</p>
-        
-        <!-- Loading Animation -->
-        <div class="flex justify-center mb-8">
-            <div class="relative w-24 h-24">
-                <!-- Spinner -->
-                <div class="absolute inset-0 rounded-full border-4 border-blue-100"></div>
-                <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 animate-spin"></div>
-                
-                <!-- Newspaper Icon -->
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <svg class="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1M19 20a2 2 0 002-2V8a2 2 0 00-2-2h-4M5 10h3m-3 3h6m-6 3h6m7-4h.01"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Progress Bar -->
-        <div class="mb-6">
-            <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full w-0 transition-all duration-300"></div>
-            </div>
-            <p id="progress-text" class="text-sm text-center text-gray-500 mt-2">Starting analysis...</p>
-        </div>
+<div class="container mx-auto mt-10 text-center">
+    <h1 class="text-3xl font-bold mb-5">Loading...</h1>
+    <div id="task-status">Starting...</div>
+    <div id="progress-bar" class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+        <div id="progress" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+    </div>
+    <div id="result-link" class="mt-5" style="display: none;">
+        <a href="" class="text-blue-500 hover:underline">View Results</a>
     </div>
 </div>
 
-{% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const keywordId = {{ keyword_id }};
-        const statusUrl = `/status/${keywordId}/`;
-        const resultsUrl = "{% url 'news_analyser:search_results' 0 %}".replace('0', keywordId);
+        const taskId = "{{ task_id }}";
+        const statusDiv = document.getElementById('task-status');
+        const progress = document.getElementById('progress');
+        const resultLink = document.getElementById('result-link').querySelector('a');
+        const resultLinkDiv = document.getElementById('result-link');
 
-        function updateProgress(analysed, total) {
-            const percentage = total > 0 ? (analysed / total) * 100 : 0;
-            progressBar.style.width = `${percentage}%`;
-            progressText.textContent = `Analysed ${analysed} of ${total} news items.`;
-        }
-
-        const interval = setInterval(() => {
-            fetch(statusUrl)
+        function getTaskStatus() {
+            fetch(`/status/${taskId}/`)
                 .then(response => response.json())
                 .then(data => {
-                    updateProgress(data.analysed_news, data.total_news);
-                    if (data.analysed_news === data.total_news) {
+                    statusDiv.textContent = data.details.status || data.state;
+                    if (data.state === 'PROGRESS') {
+                        const percent = (data.details.current / data.details.total) * 100;
+                        progress.style.width = percent + '%';
+                    } else if (data.state === 'SUCCESS') {
+                        progress.style.width = '100%';
+                        // Assuming the task returns the keyword ID in the result
+                        const keywordId = data.details.result;
+                        resultLink.href = `/search/${keywordId}/`;
+                        resultLinkDiv.style.display = 'block';
                         clearInterval(interval);
-                        window.location.href = resultsUrl;
+                    } else if (data.state === 'FAILURE') {
+                        statusDiv.textContent = 'Task failed!';
+                        clearInterval(interval);
                     }
-                })
-                .catch(error => {
-                    console.error('Error fetching task status:', error);
-                    clearInterval(interval);
                 });
-        }, 2000);
+        }
+
+        const interval = setInterval(getTaskStatus, 2000);
     });
 </script>
-{% endblock %}
 {% endblock %}

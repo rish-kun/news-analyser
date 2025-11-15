@@ -1,18 +1,28 @@
-FROM python:3.13.3-bookworm
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Stage 1: Build stage
+FROM python:3.9-slim-buster AS builder
 
-ENV PATH="/scripts:${PATH}"
-
-COPY ./requirements.txt ./requirements.txt
-RUN apt-get update && apt-get install -y gcc libc-dev 
-RUN pip3 install --upgrade pip
-RUN pip3 install -r requirements.txt
-RUN playwright install chromium
-RUN mkdir /app 
-
-COPY . /app
 WORKDIR /app
 
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-RUN python3 manage.py makemigrations 
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# Stage 2: Final stage
+FROM python:3.9-slim-buster
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+COPY --from=builder /app /app
+
+RUN useradd -m -d /home/appuser -s /bin/bash appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 8000

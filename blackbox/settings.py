@@ -11,23 +11,36 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import environ
 import os
-from dotenv import load_dotenv
-load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# Initialize environment variables
+env = environ.Env(
+    DEBUG=(bool, False),
+    LOG_LEVEL=(str, 'INFO'),
+)
+
+# Read .env file
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+# Gemini API Keys
+GEMINI_API_KEY = env('GEMINI_API_KEY')
+GEMINI_API_KEY_2 = env('GEMINI_API_KEY_2', default=None)
+GEMINI_API_KEY_3 = env('GEMINI_API_KEY_3', default=None)
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
 
 # Application definition
@@ -78,10 +91,7 @@ WSGI_APPLICATION = 'blackbox.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': env.db('DATABASE_URL', default='sqlite:///db.sqlite3')
 }
 
 
@@ -129,10 +139,97 @@ LOGOUT_REDIRECT_URL = 'login'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-ALLOWED_HOSTS = ['*']
-CSRF_COOKIE_DOMAIN = 'news-analyser.rish-kun.live'
-CSRF_TRUSTED_ORIGINS = ['https://news-analyser.rish-kun.live',
-                        'http://localhost:8000', 'http://news-analyser.rish-kun.live']
-CELERY_BROKER_URL = "amqp://localhost"   # RabbitMQ
-CELERY_RESULT_BACKEND = "django-db"  # Django database backend
-CELERY_TASK_TRACK_STARTED = True           # keeps PROGRESS state[6]
+
+# CSRF Configuration
+CSRF_COOKIE_DOMAIN = env('CSRF_COOKIE_DOMAIN', default=None)
+CSRF_TRUSTED_ORIGINS = env.list(
+    'CSRF_TRUSTED_ORIGINS',
+    default=['http://localhost:8000', 'http://127.0.0.1:8000']
+)
+
+# Celery Configuration
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://redis:6379/0')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='django-db')
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 300  # 5 minutes max
+CELERY_TASK_SOFT_TIME_LIMIT = 270  # 4.5 minutes soft limit
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'
+
+# Static files
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': env('LOG_LEVEL', default='INFO'),
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
+            'maxBytes': 1024 * 1024 * 15,  # 15MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+        },
+        'celery_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'celery.log'),
+            'maxBytes': 1024 * 1024 * 15,  # 15MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+        },
+        'error_file': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'errors.log'),
+            'maxBytes': 1024 * 1024 * 15,  # 15MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file', 'error_file'],
+            'level': env('LOG_LEVEL', default='INFO'),
+            'propagate': False,
+        },
+        'news_analyser': {
+            'handlers': ['console', 'file', 'error_file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'celery': {
+            'handlers': ['console', 'celery_file', 'error_file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': env('LOG_LEVEL', default='INFO'),
+    },
+}

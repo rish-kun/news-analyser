@@ -80,3 +80,9 @@ zstandard==0.23.0
 celery==5.4.0
 redis==5.0.7
 django-celery-results==2.5.1
+django-environ==0.11.2
+psycopg2-binary==2.9.10
+coverage==7.6.10
+flake8==7.1.1
+black==24.10.0
+gunicorn==21.2.0

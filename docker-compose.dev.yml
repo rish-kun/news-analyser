@@ -1,0 +1,28 @@
+version: '3.8'
+
+# Development-specific docker-compose override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  web:
+    command: >
+      sh -c "python manage.py makemigrations &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    environment:
+      - DEBUG=True
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - logs_volume:/app/logs
+
+  celery:
+    command: celery -A blackbox worker --loglevel=debug --concurrency=2
+    environment:
+      - DEBUG=True
+      - LOG_LEVEL=DEBUG
+
+volumes:
+  static_volume:
+  logs_volume:

@@ -21,6 +21,8 @@ from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('news_analyser.api.urls')),  # REST API endpoints
+    path('api-auth/', include('rest_framework.urls')),  # DRF login/logout
     path("", include("news_analyser.urls")),
     path('register/', news_analyser_views.register, name='register'),
     path('login/', auth_views.LoginView.as_view(), name='login'),

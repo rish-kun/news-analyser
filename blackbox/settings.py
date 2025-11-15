@@ -41,10 +41,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'news_analyser',
     "django_celery_results",
+    'rest_framework',
+    'django_filters',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -133,6 +137,185 @@ ALLOWED_HOSTS = ['*']
 CSRF_COOKIE_DOMAIN = 'news-analyser.rish-kun.live'
 CSRF_TRUSTED_ORIGINS = ['https://news-analyser.rish-kun.live',
                         'http://localhost:8000', 'http://news-analyser.rish-kun.live']
-CELERY_BROKER_URL = "amqp://localhost"   # RabbitMQ
-CELERY_RESULT_BACKEND = "django-db"  # Django database backend
-CELERY_TASK_TRACK_STARTED = True           # keeps PROGRESS state[6]
+# Celery Configuration
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 300  # 5 minutes
+CELERY_TASK_SOFT_TIME_LIMIT = 240  # 4 minutes
+CELERY_TASK_ALWAYS_EAGER = False  # Set to True for synchronous testing
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'
+CELERY_ENABLE_UTC = True
+
+# Rate limiting for tasks
+CELERY_TASK_ANNOTATIONS = {
+    'news_analyser.tasks.analyze_article_sentiment': {
+        'rate_limit': '60/m'  # Gemini API limit
+    },
+    'news_analyser.tasks.scrape_rss_source': {
+        'rate_limit': '10/m'  # Be nice to news sources
+    }
+}
+
+# Celery Beat Schedule (Periodic Tasks)
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    # Scrape during market hours (9 AM - 4 PM IST) every 30 minutes
+    'scrape-market-hours': {
+        'task': 'news_analyser.tasks.scrape_all_sources',
+        'schedule': crontab(minute='*/30', hour='9-16', day_of_week='mon-fri'),
+    },
+    # Scrape off-market hours every 2 hours
+    'scrape-off-hours': {
+        'task': 'news_analyser.tasks.scrape_all_sources',
+        'schedule': crontab(minute=0, hour='*/2'),
+    },
+    # Analyze pending articles every hour
+    'analyze-pending': {
+        'task': 'news_analyser.tasks.analyze_pending_articles',
+        'schedule': crontab(minute=0),
+    },
+    # Aggregate ticker sentiment every 15 minutes during market hours
+    'aggregate-tickers': {
+        'task': 'news_analyser.tasks.aggregate_all_tickers_sentiment',
+        'schedule': crontab(minute='*/15', hour='9-16', day_of_week='mon-fri'),
+    },
+    # Generate market summary daily at 5 PM
+    'market-summary': {
+        'task': 'news_analyser.tasks.generate_market_summary',
+        'schedule': crontab(hour=17, minute=0, day_of_week='mon-fri'),
+    },
+    # Cleanup old articles weekly
+    'cleanup-weekly': {
+        'task': 'news_analyser.tasks.cleanup_old_articles',
+        'schedule': crontab(hour=2, minute=0, day_of_week='sunday'),
+    },
+    # Clear cache daily at 3 AM
+    'clear-cache': {
+        'task': 'news_analyser.tasks.cleanup_cache',
+        'schedule': crontab(hour=3, minute=0),
+    },
+}
+
+# Redis Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.getenv('REDIS_URL', 'redis://localhost:6379/1'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'PARSER_CLASS': 'redis.connection.PythonParser',
+            'PICKLE_VERSION': -1,
+        },
+        'KEY_PREFIX': 'news_analyser',
+        'TIMEOUT': 300,  # 5 minutes default
+    }
+}
+
+# Django REST Framework Configuration
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour'
+    }
+}
+
+# CORS Configuration
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "https://news-analyser.rish-kun.live",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'news_analyser.log'),
+            'maxBytes': 1024 * 1024 * 10,  # 10MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+        },
+        'error_file': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'errors.log'),
+            'maxBytes': 1024 * 1024 * 10,  # 10MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file', 'error_file'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'news_analyser': {
+            'handlers': ['console', 'file', 'error_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'celery': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}

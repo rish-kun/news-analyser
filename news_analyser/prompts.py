@@ -35,7 +35,16 @@ Given below is an explanation of the scale:
 1: Extremely positive impact
 
 The rating has to be between -1 and 1, it should be according to the scale,however it doesnt have to be a number mentioned in the scale.
-Only provide a single numerical rating for the given news as the final answer without any additional commentary.
+
+In addition to the rating, please identify all Indian stock market tickers (NSE or BSE) mentioned in the news article.
+
+Please provide the output as a JSON object with two keys: "sentiment_score" and "tickers". The "tickers" value should be a list of the identified ticker symbols. If no tickers are found, provide an empty list.
+
+Example output:
+{
+  "sentiment_score": 0.5,
+  "tickers": ["RELIANCE", "TCS"]
+}
 
 Given below is one news:
 

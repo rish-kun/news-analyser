@@ -39,6 +39,7 @@ class News(models.Model):
     impact_rating = models.FloatField(default=0)
     source = models.ForeignKey(
         "Source", on_delete=models.CASCADE, related_name="news", default=None, null=True)
+    stocks = models.ManyToManyField('Stock', blank=True)
 
     def __str__(self):
         return self.title

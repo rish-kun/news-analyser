@@ -29,6 +29,34 @@ the_hindu_feeds = {
 
 }
 
+livemint_feeds = {
+    "companies": "https://www.livemint.com/rss/companies",
+    "money": "https://www.livemint.com/rss/money",
+    "mutual_funds": "https://www.livemint.com/rss/mutual-funds",
+}
+
+moneycontrol_feeds = {
+    "business": "https://www.moneycontrol.com/rss/business.xml",
+    "stocks": "https://www.moneycontrol.com/rss/stocks.xml",
+    "mutual_funds": "https://www.moneycontrol.com/rss/mfnews.xml",
+}
+
+business_standard_feeds = {
+    "finance": "https://www.business-standard.com/rss/finance-103.rss",
+    "markets": "https://www.business-standard.com/rss/markets-106.rss",
+    "companies": "https://www.business-standard.com/rss/companies-101.rss",
+}
+
+financial_express_feeds = {
+    "market": "https://www.financialexpress.com/market/rss",
+    "economy": "https://www.financialexpress.com/economy/rss",
+    "industry": "https://www.financialexpress.com/industry/rss",
+}
+
+india_tv_feeds = {
+    "finance": "https://www.indiatvnews.com/rss/finance.xml",
+}
+
 # each feed has the following:
 # 'summary', 'title', 'link'
 
@@ -36,7 +64,10 @@ the_hindu_feeds = {
 def check_keywords(keywords):
     e_s = {}  # dict of format "kwd":["entry", "entry", "entry"]
     feeds = list(the_hindu_feeds.values()) + \
-        list(et_feeds.values())+list(toi_feeds.values())
+        list(et_feeds.values())+list(toi_feeds.values()) + \
+        list(livemint_feeds.values()) + list(moneycontrol_feeds.values()) + \
+        list(business_standard_feeds.values()) + \
+        list(financial_express_feeds.values()) + list(india_tv_feeds.values())
     for feed in feeds:
         for entry in feedparser.parse(feed).entries:
             for keyword in keywords:

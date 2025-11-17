@@ -1,8 +1,11 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
-from .models import UserProfile
+from .models import UserProfile, Source
+from unittest.mock import patch
 
+
+@override_settings(SECRET_KEY='a-test-secret-key')
 class UserAuthTests(TestCase):
 
     def setUp(self):
@@ -53,3 +56,26 @@ class UserAuthTests(TestCase):
         self.client.login(username='testuser2', password='testpassword123')
         response = self.client.get(self.search_url)
         self.assertEqual(response.status_code, 200)
+
+
+@override_settings(SECRET_KEY='a-test-secret-key')
+class NewsAnalysisTasksTests(TestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='testuser', password='testpassword')
+        self.profile = UserProfile.objects.create(user=self.user)
+        Source.objects.create(id_name="ET", name="Economic Times", url="https://economictimes.indiatimes.com/")
+        Source.objects.create(id_name="TOI", name="Times of India", url="https://timesofindia.indiatimes.com/")
+        Source.objects.create(id_name="TH", name="The Hindu", url="https://www.thehindu.com/")
+        Source.objects.create(id_name="OTHER", name="Other", url="https://www.google.com/")
+        self.client = Client()
+        self.client.login(username='testuser', password='testpassword')
+
+    @patch('news_analyser.tasks.analyse_news_task.delay')
+    def test_search_view_triggers_analysis_task(self, mock_delay):
+        response = self.client.post(reverse('news_analyser:search'), {
+            'search_type': 'keyword',
+            'keyword': 'test',
+        })
+        self.assertTrue(mock_delay.called)

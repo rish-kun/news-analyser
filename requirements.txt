@@ -2,7 +2,6 @@ annotated-types==0.7.0
 anyio==4.9.0
 asgiref==3.8.1
 beautifulsoup4==4.13.3
-browser-use==0.1.40
 cachetools==5.5.1
 certifi==2025.1.31
 charset-normalizer==3.4.1

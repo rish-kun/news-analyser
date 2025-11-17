@@ -24,10 +24,11 @@ def check_keywords(keywords):
             try:
                 feed = feedparser.parse(source)
                 for entry in feed.entries:
-                    if keyword.lower() in entry.title.lower() or keyword.lower() in entry.summary.lower():
+                    summary = entry.get("summary", "")
+                    if keyword.lower() in entry.title.lower() or keyword.lower() in summary.lower():
                         news[keyword].append({
                             "title": entry.title,
-                            "summary": entry.summary,
+                            "summary": summary,
                             "link": entry.link,
                             "published": entry.get("published", None)
                         })

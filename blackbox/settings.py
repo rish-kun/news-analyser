@@ -165,19 +165,22 @@ CELERY_TASK_ANNOTATIONS = {
 from celery.schedules import crontab
 
 CELERY_BEAT_SCHEDULE = {
+    # NEWS SCRAPING - Refactored System
     # Scrape during market hours (9 AM - 4 PM IST) every 30 minutes
     'scrape-market-hours': {
-        'task': 'news_analyser.tasks.scrape_all_sources',
+        'task': 'news_analyser.tasks_scraping.scrape_all_news_sources',
         'schedule': crontab(minute='*/30', hour='9-16', day_of_week='mon-fri'),
     },
     # Scrape off-market hours every 2 hours
     'scrape-off-hours': {
-        'task': 'news_analyser.tasks.scrape_all_sources',
+        'task': 'news_analyser.tasks_scraping.scrape_all_news_sources',
         'schedule': crontab(minute=0, hour='*/2'),
     },
-    # Analyze pending articles every hour
-    'analyze-pending': {
-        'task': 'news_analyser.tasks.analyze_pending_articles',
+
+    # SENTIMENT ANALYSIS
+    # Analyze recent articles every hour
+    'analyze-recent': {
+        'task': 'news_analyser.tasks_scraping.analyze_recent_articles',
         'schedule': crontab(minute=0),
     },
     # Aggregate ticker sentiment every 15 minutes during market hours
@@ -185,15 +188,22 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'news_analyser.tasks.aggregate_all_tickers_sentiment',
         'schedule': crontab(minute='*/15', hour='9-16', day_of_week='mon-fri'),
     },
+
+    # REPORTING & CLEANUP
     # Generate market summary daily at 5 PM
     'market-summary': {
         'task': 'news_analyser.tasks.generate_market_summary',
         'schedule': crontab(hour=17, minute=0, day_of_week='mon-fri'),
     },
-    # Cleanup old articles weekly
-    'cleanup-weekly': {
-        'task': 'news_analyser.tasks.cleanup_old_articles',
+    # Cleanup old unanalyzed articles weekly
+    'cleanup-unanalyzed': {
+        'task': 'news_analyser.tasks_scraping.cleanup_old_unanalyzed_articles',
         'schedule': crontab(hour=2, minute=0, day_of_week='sunday'),
+    },
+    # Cleanup old analyzed articles monthly
+    'cleanup-old-articles': {
+        'task': 'news_analyser.tasks.cleanup_old_articles',
+        'schedule': crontab(hour=3, minute=0, day_of_month=1),
     },
     # Clear cache daily at 3 AM
     'clear-cache': {

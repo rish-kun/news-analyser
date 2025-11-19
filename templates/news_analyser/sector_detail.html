@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ sector.name }} - Sector Analysis - News Analyser{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ sector.name }}</h1>
+                <p class="text-gray-600 mt-1">Sector sentiment analysis and insights</p>
+            </div>
+            <div class="text-right">
+                <div class="text-4xl font-bold {% if sector_data.avg_sentiment > 0 %}text-green-600{% elif sector_data.avg_sentiment < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                    {{ sector_data.avg_sentiment|floatformat:2 }}
+                </div>
+                <p class="text-sm text-gray-600 mt-1">Sentiment Score</p>
+                <span class="inline-block mt-2 px-3 py-1 text-sm font-semibold rounded-full {% if sector_data.sentiment_label == 'POSITIVE' %}bg-green-100 text-green-800{% elif sector_data.sentiment_label == 'NEGATIVE' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ sector_data.sentiment_label }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-sm font-medium text-gray-600">Total Articles</p>
+            <p class="text-2xl font-bold text-gray-900 mt-2">{{ sector_data.article_count|default:0 }}</p>
+            <p class="text-xs text-gray-500 mt-1">Last 30 days</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-sm font-medium text-gray-600">Positive News</p>
+            <p class="text-2xl font-bold text-green-600 mt-2">{{ sector_data.positive_count|default:0 }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ sector_data.positive_percentage|floatformat:1 }}%</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-sm font-medium text-gray-600">Negative News</p>
+            <p class="text-2xl font-bold text-red-600 mt-2">{{ sector_data.negative_count|default:0 }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ sector_data.negative_percentage|floatformat:1 }}%</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-sm font-medium text-gray-600">Stocks Tracked</p>
+            <p class="text-2xl font-bold text-blue-600 mt-2">{{ sector.stocks.count|default:0 }}</p>
+            <p class="text-xs text-gray-500 mt-1">In this sector</p>
+        </div>
+    </div>
+
+    <!-- Sentiment Trend Chart -->
+    <div class="bg-white rounded-lg shadow mb-8">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Sentiment Trend</h2>
+            <p class="text-sm text-gray-600 mt-1">30-day sector sentiment evolution</p>
+        </div>
+        <div class="p-6">
+            <canvas id="sectorSentimentChart" height="80"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Stocks in Sector -->
+    <div class="bg-white rounded-lg shadow mb-8">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Top Stocks by Sentiment</h2>
+            <p class="text-sm text-gray-600 mt-1">Most mentioned stocks in {{ sector.name }}</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentions</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confidence</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for stock in top_stocks %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="{% url 'news_analyser:ticker_detail' stock.symbol %}" class="font-medium text-blue-600 hover:text-blue-800">
+                                {{ stock.symbol }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">{{ stock.company_name }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <span class="text-lg font-bold {% if stock.avg_sentiment > 0 %}text-green-600{% elif stock.avg_sentiment < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                                    {{ stock.avg_sentiment|floatformat:2 }}
+                                </span>
+                                <span class="ml-2 px-2 py-1 text-xs font-semibold rounded {% if stock.sentiment_label == 'POSITIVE' %}bg-green-100 text-green-800{% elif stock.sentiment_label == 'NEGATIVE' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ stock.sentiment_label }}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {{ stock.mention_count }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {{ stock.avg_confidence|floatformat:0 }}%
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">No stock data available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recent News -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Recent News</h2>
+            <p class="text-sm text-gray-600 mt-1">Latest articles in {{ sector.name }} sector</p>
+        </div>
+        <div class="divide-y divide-gray-200">
+            {% for news in recent_news %}
+            <div class="p-6 hover:bg-gray-50 transition">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <a href="{% url 'news_analyser:news_detail' news.id %}" class="text-lg font-medium text-blue-600 hover:text-blue-800">
+                            {{ news.title }}
+                        </a>
+                        <p class="text-sm text-gray-600 mt-2">{{ news.description|truncatewords:30 }}</p>
+                        <div class="flex items-center mt-3 text-sm text-gray-500">
+                            <span>{{ news.source.name }}</span>
+                            <span class="mx-2">•</span>
+                            <span>{{ news.published_at|timesince }} ago</span>
+                        </div>
+                        <!-- Mentioned stocks -->
+                        {% if news.tickers.all %}
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            {% for ticker in news.tickers.all|slice:":5" %}
+                                <a href="{% url 'news_analyser:ticker_detail' ticker.symbol %}" class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold hover:bg-blue-200">
+                                    {{ ticker.symbol }}
+                                </a>
+                            {% endfor %}
+                            {% if news.tickers.count > 5 %}
+                                <span class="px-2 py-1 text-xs text-gray-600">+{{ news.tickers.count|add:"-5" }} more</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="ml-6 text-right">
+                        {% with news.sentiment_scores.first as sentiment %}
+                            {% if sentiment %}
+                                <div class="text-2xl font-bold {% if sentiment.sentiment_score > 0 %}text-green-600{% elif sentiment.sentiment_score < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                                    {{ sentiment.sentiment_score|floatformat:2 }}
+                                </div>
+                                <span class="inline-block mt-2 px-2 py-1 text-xs font-semibold rounded {% if sentiment.sentiment_label == 'POSITIVE' %}bg-green-100 text-green-800{% elif sentiment.sentiment_label == 'NEGATIVE' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ sentiment.sentiment_label }}
+                                </span>
+                            {% else %}
+                                <span class="text-sm text-gray-400">Not analyzed</span>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-8 text-center text-gray-500">
+                No recent news found for {{ sector.name }} sector
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('sectorSentimentChart').getContext('2d');
+
+    // Sentiment history data from backend
+    const sentimentData = {{ sentiment_history|safe }};
+
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: sentimentData.dates,
+            datasets: [{
+                label: 'Sector Sentiment',
+                data: sentimentData.scores,
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Sentiment: ' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: -1,
+                    max: 1,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(1);
+                        }
+                    },
+                    grid: {
+                        color: function(context) {
+                            if (context.tick.value === 0) {
+                                return 'rgba(0, 0, 0, 0.3)';
+                            }
+                            return 'rgba(0, 0, 0, 0.05)';
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

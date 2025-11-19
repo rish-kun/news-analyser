@@ -35,7 +35,8 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Impact Rating</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tickers</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -54,27 +55,42 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ news.source.name|default:news.link|urlizetrunc:20 }}
                                     </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex flex-wrap gap-1">
+                                            {% for ticker in news.tickers.all|slice:":3" %}
+                                                <a href="{% url 'news_analyser:ticker_detail' ticker.symbol %}" class="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded hover:bg-blue-200">
+                                                    {{ ticker.symbol }}
+                                                </a>
+                                            {% endfor %}
+                                            {% if news.tickers.count > 3 %}
+                                                <span class="px-2 py-1 text-xs text-gray-600">+{{ news.tickers.count|add:"-3" }}</span>
+                                            {% elif news.tickers.count == 0 %}
+                                                <span class="text-xs text-gray-400">—</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {% if news.impact_rating > 0.3 %}
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                {{ news.impact_rating|floatformat:2 }}
-                                            </span>
-                                        {% elif news.impact_rating < -0.3 %}
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                {{ news.impact_rating|floatformat:2 }}
-                                            </span>
-                                        {% else %}
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                {{ news.impact_rating|floatformat:2 }}
-                                            </span>
-                                        {% endif %}
+                                        {% with sentiment=news.sentiment_scores.first %}
+                                            {% if sentiment %}
+                                                <div class="flex items-center">
+                                                    <span class="text-lg font-bold {% if sentiment.sentiment_score > 0 %}text-green-600{% elif sentiment.sentiment_score < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                                                        {{ sentiment.sentiment_score|floatformat:2 }}
+                                                    </span>
+                                                    <span class="ml-2 px-2 py-1 text-xs font-semibold rounded {% if sentiment.sentiment_label == 'POSITIVE' %}bg-green-100 text-green-800{% elif sentiment.sentiment_label == 'NEGATIVE' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                        {{ sentiment.sentiment_label }}
+                                                    </span>
+                                                </div>
+                                            {% else %}
+                                                <span class="text-xs text-gray-400">Not analyzed</span>
+                                            {% endif %}
+                                        {% endwith %}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex space-x-2">
-                                            <a href="{{ news.link }}" target="_blank" rel="noopener noreferrer" 
+                                            <a href="{{ news.link }}" target="_blank" rel="noopener noreferrer"
                                                class="text-blue-600 hover:text-blue-900">Read original</a>
                                             <span class="text-gray-300">|</span>
-                                            <a href="{% url 'news_analyser:news_analysis' news.id %}" 
+                                            <a href="{% url 'news_analyser:news_detail' news.id %}"
                                                class="text-green-600 hover:text-green-900">View analysis</a>
                                         </div>
                                     </td>

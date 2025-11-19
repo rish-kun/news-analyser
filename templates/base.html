@@ -6,6 +6,7 @@
     <title>{% block title %}News Analyser{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
     <!-- Navigation -->
@@ -24,11 +25,13 @@
 
                 <!-- Desktop Navigation -->
                 <div class="hidden sm:flex sm:items-center sm:space-x-4">
-                    <a href="{% url 'news_analyser:search' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Search</a>
-                    <a href="{% url 'news_analyser:all_searches' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">History</a>
                     {% if user.is_authenticated %}
-                        <a href="{% url 'news_analyser:add_stocks' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Add Stocks</a>
-                        <a href="{% url 'news_analyser:past_searches' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Past Searches</a>
+                        <a href="{% url 'news_analyser:dashboard' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Dashboard</a>
+                        <a href="{% url 'news_analyser:sector_analysis' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Sectors</a>
+                        <a href="{% url 'news_analyser:watchlist' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Watchlist</a>
+                    {% endif %}
+                    <a href="{% url 'news_analyser:search' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Search</a>
+                    {% if user.is_authenticated %}
                         <a href="{% url 'news_analyser:user_settings' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Settings</a>
                         <a href="{% url 'logout' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Logout</a>
                     {% else %}
@@ -51,11 +54,13 @@
         <!-- Mobile menu -->
         <div class="mobile-menu hidden sm:hidden">
             <div class="px-2 pt-2 pb-3 space-y-1">
-                <a href="{% url 'news_analyser:search' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Search</a>
-                <a href="{% url 'news_analyser:all_searches' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">History</a>
                 {% if user.is_authenticated %}
-                    <a href="{% url 'news_analyser:add_stocks' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Add Stocks</a>
-                    <a href="{% url 'news_analyser:past_searches' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Past Searches</a>
+                    <a href="{% url 'news_analyser:dashboard' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Dashboard</a>
+                    <a href="{% url 'news_analyser:sector_analysis' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Sectors</a>
+                    <a href="{% url 'news_analyser:watchlist' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Watchlist</a>
+                {% endif %}
+                <a href="{% url 'news_analyser:search' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Search</a>
+                {% if user.is_authenticated %}
                     <a href="{% url 'news_analyser:user_settings' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Settings</a>
                     <a href="{% url 'logout' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Logout</a>
                 {% else %}

@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Watchlist - News Analyser{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Your Watchlist</h1>
+            <p class="text-gray-600">Track sentiment for your favorite stocks</p>
+        </div>
+        <a href="{% url 'news_analyser:search' %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+            + Add Stocks
+        </a>
+    </div>
+
+    <!-- Summary Cards -->
+    {% if watchlist_stocks %}
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-sm font-medium text-gray-600">Total Stocks</p>
+            <p class="text-2xl font-bold text-gray-900 mt-2">{{ watchlist_stocks|length }}</p>
+            <p class="text-xs text-gray-500 mt-1">In watchlist</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-sm font-medium text-gray-600">Avg Sentiment</p>
+            <p class="text-2xl font-bold {% if avg_sentiment > 0 %}text-green-600{% elif avg_sentiment < 0 %}text-red-600{% else %}text-gray-600{% endif %} mt-2">
+                {{ avg_sentiment|floatformat:2 }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">Overall portfolio</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-sm font-medium text-gray-600">Positive Stocks</p>
+            <p class="text-2xl font-bold text-green-600 mt-2">{{ positive_count|default:0 }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ positive_percentage|floatformat:0 }}% of total</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-sm font-medium text-gray-600">Negative Stocks</p>
+            <p class="text-2xl font-bold text-red-600 mt-2">{{ negative_count|default:0 }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ negative_percentage|floatformat:0 }}% of total</p>
+        </div>
+    </div>
+
+    <!-- Watchlist Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Stocks</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sector</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentions</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confidence</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for stock in watchlist_stocks %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="{% url 'news_analyser:ticker_detail' stock.symbol %}" class="font-medium text-blue-600 hover:text-blue-800">
+                                {{ stock.symbol }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-medium text-gray-900">{{ stock.company_name }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if stock.sector %}
+                                <a href="{% url 'news_analyser:sector_detail' stock.sector.name %}" class="text-sm text-blue-600 hover:text-blue-800">
+                                    {{ stock.sector.name }}
+                                </a>
+                            {% else %}
+                                <span class="text-sm text-gray-400">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <span class="text-lg font-bold {% if stock.sentiment > 0 %}text-green-600{% elif stock.sentiment < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                                    {{ stock.sentiment|floatformat:2 }}
+                                </span>
+                                <span class="ml-2 px-2 py-1 text-xs font-semibold rounded {% if stock.sentiment_label == 'POSITIVE' %}bg-green-100 text-green-800{% elif stock.sentiment_label == 'NEGATIVE' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ stock.sentiment_label }}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {{ stock.mentions|default:0 }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden max-w-[60px]">
+                                    <div class="h-full bg-blue-500" style="width: {{ stock.confidence|floatformat:0 }}%"></div>
+                                </div>
+                                <span class="ml-2 text-sm text-gray-600">{{ stock.confidence|floatformat:0 }}%</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <button onclick="removeFromWatchlist('{{ stock.symbol }}')" class="text-red-600 hover:text-red-800 font-medium">
+                                Remove
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recent News for Watchlist Stocks -->
+    <div class="mt-8 bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Recent News for Your Stocks</h2>
+            <p class="text-sm text-gray-600 mt-1">Latest articles mentioning stocks in your watchlist</p>
+        </div>
+        <div class="divide-y divide-gray-200">
+            {% for news in recent_news %}
+            <div class="p-6 hover:bg-gray-50 transition">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <a href="{% url 'news_analyser:news_detail' news.id %}" class="text-lg font-medium text-blue-600 hover:text-blue-800">
+                            {{ news.title }}
+                        </a>
+                        <p class="text-sm text-gray-600 mt-2">{{ news.description|truncatewords:25 }}</p>
+                        <div class="flex items-center mt-3 text-sm text-gray-500">
+                            <span>{{ news.source.name }}</span>
+                            <span class="mx-2">•</span>
+                            <span>{{ news.published_at|timesince }} ago</span>
+                        </div>
+                        <!-- Show which watchlist stocks are mentioned -->
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            {% for ticker in news.tickers.all %}
+                                <a href="{% url 'news_analyser:ticker_detail' ticker.symbol %}" class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold hover:bg-blue-200">
+                                    {{ ticker.symbol }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="ml-6 text-right">
+                        {% with news.sentiment_scores.first as sentiment %}
+                            {% if sentiment %}
+                                <div class="text-2xl font-bold {% if sentiment.sentiment_score > 0 %}text-green-600{% elif sentiment.sentiment_score < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                                    {{ sentiment.sentiment_score|floatformat:2 }}
+                                </div>
+                                <span class="inline-block mt-2 px-2 py-1 text-xs font-semibold rounded {% if sentiment.sentiment_label == 'POSITIVE' %}bg-green-100 text-green-800{% elif sentiment.sentiment_label == 'NEGATIVE' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ sentiment.sentiment_label }}
+                                </span>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-8 text-center text-gray-500">
+                No recent news found for your watchlist stocks
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="bg-white rounded-lg shadow p-12 text-center">
+        <div class="text-6xl mb-4">📊</div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Your watchlist is empty</h2>
+        <p class="text-gray-600 mb-6">Start tracking sentiment for your favorite stocks</p>
+        <a href="{% url 'news_analyser:search' %}" class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+            Search for Stocks
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function removeFromWatchlist(symbol) {
+    if (confirm('Remove ' + symbol + ' from watchlist?')) {
+        // This would be implemented with AJAX to remove from watchlist
+        fetch('/api/watchlist/remove/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ symbol: symbol })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Failed to remove stock from watchlist');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred');
+        });
+    }
+}
+</script>
+{% endblock %}

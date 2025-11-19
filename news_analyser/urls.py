@@ -1,7 +1,25 @@
 from django.urls import path
 from .views import *
+from .views_enhanced import (
+    DashboardView,
+    TickerDetailView,
+    SectorAnalysisView,
+    SectorDetailView,
+    NewsAnalysisView as NewsDetailView,
+    WatchlistView
+)
+
 app_name = "news_analyser"
 urlpatterns = [
+    # Enhanced frontend views
+    path("dashboard/", DashboardView.as_view(), name="dashboard"),
+    path("ticker/<str:symbol>/", TickerDetailView.as_view(), name="ticker_detail"),
+    path("sectors/", SectorAnalysisView.as_view(), name="sector_analysis"),
+    path("sector/<str:sector_name>/", SectorDetailView.as_view(), name="sector_detail"),
+    path("news/<int:news_id>/", NewsDetailView.as_view(), name="news_detail"),
+    path("watchlist/", WatchlistView.as_view(), name="watchlist"),
+
+    # Original views (maintained for backward compatibility)
     path("", SearchView.as_view(), name="search"),
     path("search/<int:news_id>/", search_result, name="search_results"),
     path("all_searches/", all_searches, name="all_searches"),

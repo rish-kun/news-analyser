@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sector Analysis - News Analyser{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Sector Analysis</h1>
+        <p class="text-gray-600">Comprehensive sentiment analysis across Indian market sectors</p>
+    </div>
+
+    <!-- Sector Overview Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {% for sector in all_sectors %}
+        <a href="{% url 'news_analyser:sector_detail' sector.name %}" class="block bg-white rounded-lg shadow hover:shadow-lg transition p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">{{ sector.name }}</h3>
+                <span class="px-3 py-1 text-sm font-semibold rounded-full {% if sector.avg_sentiment > 0.2 %}bg-green-100 text-green-800{% elif sector.avg_sentiment < -0.2 %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ sector.sentiment_label }}
+                </span>
+            </div>
+
+            <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-600">Sentiment Score</span>
+                    <span class="text-2xl font-bold {% if sector.avg_sentiment > 0 %}text-green-600{% elif sector.avg_sentiment < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                        {{ sector.avg_sentiment|floatformat:2 }}
+                    </span>
+                </div>
+                <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-full transition-all duration-500 {% if sector.avg_sentiment > 0 %}bg-green-500{% else %}bg-red-500{% endif %}"
+                         style="width: {{ sector.avg_sentiment|add:1.0|floatformat:2|default:'1.0' }}%"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <p class="text-gray-600">Articles</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ sector.article_count|default:0 }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-600">Stocks</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ sector.stock_count|default:0 }}</p>
+                </div>
+            </div>
+
+            {% if sector.change %}
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <div class="flex items-center text-sm">
+                    <span class="text-gray-600">24h Change:</span>
+                    <span class="ml-2 font-semibold {% if sector.change > 0 %}text-green-600{% elif sector.change < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                        {% if sector.change > 0 %}▲{% elif sector.change < 0 %}▼{% else %}—{% endif %}
+                        {{ sector.change|floatformat:3 }}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+        </a>
+        {% empty %}
+        <div class="col-span-3 text-center py-12 text-gray-500">
+            No sector data available
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Trending Sectors -->
+    <div class="bg-white rounded-lg shadow mb-8">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Trending Sectors</h2>
+            <p class="text-sm text-gray-600 mt-1">Top 5 sectors by news volume and sentiment</p>
+        </div>
+        <div class="p-6">
+            {% if trending_sectors %}
+            <div class="space-y-4">
+                {% for sector in trending_sectors %}
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                        {{ forloop.counter }}
+                    </div>
+                    <div class="flex-1 ml-4">
+                        <a href="{% url 'news_analyser:sector_detail' sector.name %}" class="text-lg font-medium text-gray-900 hover:text-blue-600">
+                            {{ sector.name }}
+                        </a>
+                        <p class="text-sm text-gray-600">{{ sector.article_count }} articles • {{ sector.stock_count }} stocks</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xl font-bold {% if sector.avg_sentiment > 0 %}text-green-600{% elif sector.avg_sentiment < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                            {{ sector.avg_sentiment|floatformat:2 }}
+                        </div>
+                        <span class="inline-block mt-1 px-2 py-1 text-xs font-semibold rounded {% if sector.sentiment_label == 'POSITIVE' %}bg-green-100 text-green-800{% elif sector.sentiment_label == 'NEGATIVE' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ sector.sentiment_label }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-center text-gray-500 py-8">No trending sectors available</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sector Rotation Signals -->
+    {% if rotation_signals %}
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Sector Rotation Signals</h2>
+            <p class="text-sm text-gray-600 mt-1">Sectors showing significant sentiment shifts</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sector</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Sentiment</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Previous Sentiment</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Signal</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Articles</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for signal in rotation_signals %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="{% url 'news_analyser:sector_detail' signal.sector %}" class="font-medium text-blue-600 hover:text-blue-800">
+                                {{ signal.sector }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <span class="text-lg font-bold {% if signal.current_sentiment > 0 %}text-green-600{% elif signal.current_sentiment < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                                    {{ signal.current_sentiment|floatformat:2 }}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-lg font-bold text-gray-600">
+                                {{ signal.previous_sentiment|floatformat:2 }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <span class="text-lg font-bold {% if signal.change > 0 %}text-green-600{% elif signal.change < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                                    {% if signal.change > 0 %}+{% endif %}{{ signal.change|floatformat:3 }}
+                                </span>
+                                <span class="ml-2 text-sm text-gray-500">
+                                    ({{ signal.change_percentage|floatformat:0 }}%)
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-3 py-1 text-sm font-semibold rounded-full {% if signal.signal == 'ROTATION_IN' %}bg-green-100 text-green-800{% elif signal.signal == 'ROTATION_OUT' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {{ signal.signal_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {{ signal.article_count }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

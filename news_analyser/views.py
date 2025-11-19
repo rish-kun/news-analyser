@@ -30,7 +30,8 @@ def search_result(request, news_id=None):
 class SearchView(LoginRequiredMixin, View):
 
     def get(self, request):
-        user_stocks = request.user.profile.stocks.all()
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+        user_stocks = profile.stocks.all()
         return render(request, "news_analyser/search.html", {"user_stocks": user_stocks})
 
     def post(self, request):
@@ -50,10 +51,11 @@ class SearchView(LoginRequiredMixin, View):
         kwd_link = {}
         print("news", news)
         k_obj = None
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
         for k, n in news.items():
             print("in the loop")
             k_obj, created = Keyword.objects.get_or_create(name=k)
-            request.user.profile.searches.add(k_obj)
+            profile.searches.add(k_obj)
             if created:
                 k_obj.save()
             for i in n:
@@ -76,7 +78,8 @@ class SearchView(LoginRequiredMixin, View):
 
 @login_required
 def all_searches(request):
-    kwds = request.user.profile.searches.all()
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    kwds = profile.searches.all()
     searches = {}
     for kwd in kwds:
         searches[kwd] = kwd.news.all()
@@ -153,7 +156,7 @@ def register(request):
 
 @login_required
 def user_settings(request):
-    user_profile = request.user.profile
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
     if request.method == 'POST':
         form = UserSettingsForm(request.POST)
         if form.is_valid():
@@ -169,18 +172,20 @@ def user_settings(request):
 
 @login_required
 def past_searches(request):
-    searches = request.user.profile.searches.all()
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    searches = profile.searches.all()
     return render(request, 'news_analyser/past_searches.html', {'searches': searches})
 
 
 @login_required
 def add_stocks(request):
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
     if request.method == 'POST':
         selected_stocks = request.POST.getlist('stocks')
-        request.user.profile.stocks.set(selected_stocks)
+        profile.stocks.set(selected_stocks)
         messages.success(request, 'Your stock portfolio has been updated.')
         return redirect('news_analyser:add_stocks')
 
     stocks = Stock.objects.all()
-    user_stocks = request.user.profile.stocks.values_list('id', flat=True)
+    user_stocks = profile.stocks.values_list('id', flat=True)
     return render(request, 'news_analyser/add_stocks.html', {'stocks': stocks, 'user_stocks': user_stocks})

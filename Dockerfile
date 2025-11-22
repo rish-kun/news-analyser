@@ -33,6 +33,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     postgresql-client \
+    wget \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app user
@@ -48,8 +50,24 @@ COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 # Update PATH for appuser
 ENV PATH=/home/appuser/.local/bin:$PATH
 
+# Install Playwright browsers and dependencies
+# We need to do this as root before switching user
+# But playwright install usually installs to /root/.cache/ms-playwright or similar
+# We need to set PLAYWRIGHT_BROWSERS_PATH or install globally
+ENV PLAYWRIGHT_BROWSERS_PATH=/app/pw-browsers
+RUN mkdir -p $PLAYWRIGHT_BROWSERS_PATH
+
+# Install Playwright globally for root to use
+RUN pip install playwright
+
+# Install Playwright browsers
+RUN playwright install --with-deps chromium
+
 # Copy project files
-COPY --chown=appuser:appuser . .
+COPY . .
+
+# Fix permissions
+RUN chown -R appuser:appuser /app
 
 # Switch to non-root user
 USER appuser

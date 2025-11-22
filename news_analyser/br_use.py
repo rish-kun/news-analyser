@@ -38,7 +38,7 @@ async def get_news(link):
         task=task,
         initial_actions=initial_actions,
         llm=ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash-lite", api_key=SecretStr(os.getenv('GEMINI_API_KEY_3')), controller=controller),
+            model="gemini-2.0-flash-lite", api_key=SecretStr(os.getenv('GEMINI_API_KEY_3') or os.getenv('GEMINI_API_KEY')), controller=controller),
         browser=browser,
         controller=controller
     )

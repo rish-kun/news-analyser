@@ -25,7 +25,7 @@
                 <!-- Desktop Navigation -->
                 <div class="hidden sm:flex sm:items-center sm:space-x-4">
                     <a href="{% url 'news_analyser:search' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Search</a>
-                    <a href="{% url 'news_analyser:all_searches' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">History</a>
+                    <a href="{% url 'news_analyser:past_searches' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">History</a>
                     {% if user.is_authenticated %}
                         <a href="{% url 'news_analyser:add_stocks' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Add Stocks</a>
                         <a href="{% url 'news_analyser:past_searches' %}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Past Searches</a>
@@ -52,7 +52,7 @@
         <div class="mobile-menu hidden sm:hidden">
             <div class="px-2 pt-2 pb-3 space-y-1">
                 <a href="{% url 'news_analyser:search' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Search</a>
-                <a href="{% url 'news_analyser:all_searches' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">History</a>
+                <a href="{% url 'news_analyser:past_searches' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">History</a>
                 {% if user.is_authenticated %}
                     <a href="{% url 'news_analyser:add_stocks' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Add Stocks</a>
                     <a href="{% url 'news_analyser:past_searches' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">Past Searches</a>

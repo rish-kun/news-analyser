@@ -91,6 +91,8 @@ def check_keywords(keywords: List[str], max_per_feed: int = 50) -> Dict[str, Lis
     logger.info(f"Starting RSS search for keywords: {keywords}")
 
     e_s = {}  # dict of format "kwd":["entry", "entry", "entry"]
+    import concurrent.futures
+
     feeds = (
         list(the_hindu_feeds.values())
         + list(et_feeds.values())
@@ -104,7 +106,8 @@ def check_keywords(keywords: List[str], max_per_feed: int = 50) -> Dict[str, Lis
     successful_feeds = 0
     failed_feeds = 0
 
-    for feed_url in feeds:
+    def fetch_and_process_feed(feed_url):
+        local_results = {}
         try:
             logger.debug(f"Fetching feed: {feed_url}")
             parsed_feed = feedparser.parse(feed_url)
@@ -117,8 +120,7 @@ def check_keywords(keywords: List[str], max_per_feed: int = 50) -> Dict[str, Lis
 
             if not hasattr(parsed_feed, 'entries') or not parsed_feed.entries:
                 logger.warning(f"No entries found in feed: {feed_url}")
-                failed_feeds += 1
-                continue
+                return False, local_results
 
             # Limit entries to process
             entries_to_process = parsed_feed.entries[:max_per_feed]
@@ -145,23 +147,42 @@ def check_keywords(keywords: List[str], max_per_feed: int = 50) -> Dict[str, Lis
                                 continue
 
                             # Add to results
-                            if keyword not in e_s:
-                                e_s[keyword] = []
+                            if keyword not in local_results:
+                                local_results[keyword] = []
 
                             # Avoid duplicates
-                            if entry not in e_s[keyword]:
-                                e_s[keyword].append(entry)
+                            if entry not in local_results[keyword]:
+                                local_results[keyword].append(entry)
 
                 except Exception as e:
                     logger.error(f"Error processing entry: {e}", exc_info=True)
                     continue
-
-            successful_feeds += 1
+            
+            return True, local_results
 
         except Exception as e:
             logger.error(f"Failed to fetch/parse feed {feed_url}: {e}", exc_info=True)
-            failed_feeds += 1
-            continue
+            return False, local_results
+
+    # Use ThreadPoolExecutor to fetch feeds in parallel
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_url = {executor.submit(fetch_and_process_feed, url): url for url in feeds}
+        for future in concurrent.futures.as_completed(future_to_url):
+            url = future_to_url[future]
+            try:
+                success, results = future.result()
+                if success:
+                    successful_feeds += 1
+                    # Merge results
+                    for kw, entries in results.items():
+                        if kw not in e_s:
+                            e_s[kw] = []
+                        e_s[kw].extend(entries)
+                else:
+                    failed_feeds += 1
+            except Exception as e:
+                logger.error(f"Feed processing generated an exception for {url}: {e}")
+                failed_feeds += 1
 
     logger.info(
         f"RSS search complete. Successful feeds: {successful_feeds}, "

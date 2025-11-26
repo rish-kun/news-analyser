@@ -1,17 +1,16 @@
 # Simplified, working Dockerfile
-FROM python:3.11-slim
+FROM mcr.microsoft.com/playwright/python:v1.49.0-jammy
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies including curl for healthchecks
+# Install system dependencies
+# The base image already has most things, but we might need some specific ones
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     postgresql-client \
-    wget \
-    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # Create working directory
@@ -22,18 +21,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright browsers and dependencies
-# We need to do this as root before switching user
-# But playwright install usually installs to /root/.cache/ms-playwright or similar
-# We need to set PLAYWRIGHT_BROWSERS_PATH or install globally
-ENV PLAYWRIGHT_BROWSERS_PATH=/app/pw-browsers
-RUN mkdir -p $PLAYWRIGHT_BROWSERS_PATH
-
-# Install Playwright globally for root to use
-RUN pip install playwright
-
 # Install Playwright browsers
-RUN playwright install --with-deps chromium
+# The base image includes dependencies, but we ensure browsers are installed
+RUN playwright install chromium
 
 # Copy project files
 COPY . .

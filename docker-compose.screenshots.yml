@@ -1,0 +1,77 @@
+version: '3.8'
+
+# Docker Compose configuration for screenshot generation
+# Usage: docker-compose -f docker-compose.screenshots.yml up
+
+services:
+  # Temporary database for screenshots
+  screenshot_db:
+    image: postgres:15-alpine
+    container_name: news_analyser_screenshot_db
+    environment:
+      - POSTGRES_DB=news_analyser_screenshots
+      - POSTGRES_USER=screenshot_user
+      - POSTGRES_PASSWORD=screenshot_pass
+    networks:
+      - screenshot_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U screenshot_user"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Django web server for screenshots
+  screenshot_web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: news_analyser_screenshot_web
+    command: >
+      sh -c "python manage.py makemigrations &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - screenshots_volume:/app/screenshots
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=screenshot-secret-key
+      - DATABASE_URL=postgresql://screenshot_user:screenshot_pass@screenshot_db:5432/news_analyser_screenshots
+      - ALLOWED_HOSTS=*
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dummy-key}
+    depends_on:
+      screenshot_db:
+        condition: service_healthy
+    networks:
+      - screenshot_network
+
+  # Playwright screenshot capture
+  screenshot_capture:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: news_analyser_screenshot_capture
+    command: >
+      sh -c "playwright install chromium &&
+             python capture_screenshots.py"
+    volumes:
+      - .:/app
+      - screenshots_volume:/app/screenshots
+    environment:
+      - DATABASE_URL=postgresql://screenshot_user:screenshot_pass@screenshot_db:5432/news_analyser_screenshots
+      - DJANGO_SETTINGS_MODULE=blackbox.settings
+      - SECRET_KEY=screenshot-secret-key
+      - DEBUG=True
+    depends_on:
+      - screenshot_web
+    networks:
+      - screenshot_network
+
+volumes:
+  screenshots_volume:
+
+networks:
+  screenshot_network:
+    driver: bridge

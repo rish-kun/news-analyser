@@ -1,19 +1,112 @@
+version: '3.8'
+
 services:
-  blackbox:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: news_analyser_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: news_analyser
+      POSTGRES_USER: news_user
+      POSTGRES_PASSWORD: news_password
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U news_user -d news_analyser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - news_analyser_network
+
+  # Redis for Celery broker and cache
+  redis:
+    image: redis:7-alpine
+    container_name: news_analyser_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - news_analyser_network
+    command: redis-server
+    volumes:
+      - redis_data:/data
+
+  # Django Web Application
+  web:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "5959:8080"
+    container_name: news_analyser_web
+    command: >
+      sh -c "python manage.py makemigrations --noinput &&
+             python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn blackbox.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile - --error-logfile -"
     volumes:
-      - static_volume:/home/app/web/staticfiles
-    entrypoint: [
-        "/bin/sh",
-        "-c",
-        "python manage.py makemigrations &&
-        python manage.py migrate &&
-        python manage.py runserver 0.0.0.0:8080",
-      ]
+      - .:/app
+      - static_volume:/app/staticfiles
+      - logs_volume:/app/logs
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://news_user:news_password@db:5432/news_analyser
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - news_analyser_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Celery Worker
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: news_analyser_celery
+    command: celery -A blackbox worker --loglevel=info --concurrency=2
+    volumes:
+      - .:/app
+      - logs_volume:/app/logs
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-CHANGE-THIS-IN-PRODUCTION-12345}
+      - DATABASE_URL=postgresql://news_user:news_password@db:5432/news_analyser
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dummy-key-please-add-real-key}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_started
+    networks:
+      - news_analyser_network
 
 volumes:
+  postgres_data:
+  redis_data:
   static_volume:
+  logs_volume:
+
+networks:
+  news_analyser_network:
+    driver: bridge

@@ -38,20 +38,20 @@ class SearchView(LoginRequiredMixin, View):
         if search_type == "keyword":
             kwds = request.POST.get("keyword").split(",")
         else:
-            kwds = request.POST.getlist("stocks")
+            stock_ids = request.POST.getlist("stocks")
+            stocks = Stock.objects.filter(id__in=stock_ids)
+            kwds = [stock.symbol for stock in stocks]
 
-        search_type = request.POST.get("search_type")
-        if search_type == "keyword":
-            kwds = request.POST.get("keyword").split(",")
-        else:
-            kwds = request.POST.getlist("stocks")
-
+        print(f"Search Type: {search_type}")
+        print(f"Keywords/Stocks: {kwds}")
+        
         news = check_keywords(kwds)
         kwd_link = {}
-        print("news", news)
+        print("news found:", len(news))
+        
         k_obj = None
         for k, n in news.items():
-            print("in the loop")
+            print(f"Processing keyword: {k}")
             k_obj, created = Keyword.objects.get_or_create(name=k)
             request.user.profile.searches.add(k_obj)
             if created:
@@ -63,11 +63,28 @@ class SearchView(LoginRequiredMixin, View):
         for k, n in kwd_link.items():
             for i in n:
                 analyse_news_task.delay(i.id)
-                print(i.impact_rating)
+                # print(i.impact_rating)
 
         if k_obj:
+            print(f"Redirecting to results for keyword ID: {k_obj.id}")
             return redirect(reverse("news_analyser:search_results", args=[k_obj.id]))
+        elif kwds and len(kwds) > 0:
+             # If we have keywords but no news found, we might still want to redirect 
+             # to a result page that says "No news found" or similar, 
+             # OR if we want to show the 'Analyzing' page, we need a valid k_obj.
+             # For now, let's try to find if the keyword object already exists even if no new news.
+             try:
+                 # Use the first keyword/stock symbol to find/create the object
+                 first_kwd = kwds[0]
+                 k_obj, _ = Keyword.objects.get_or_create(name=first_kwd)
+                 print(f"No new news, but redirecting to existing/new keyword ID: {k_obj.id}")
+                 return redirect(reverse("news_analyser:search_results", args=[k_obj.id]))
+             except Exception as e:
+                 print(f"Error getting keyword object: {e}")
+                 messages.info(request, "No news found for the given keywords.")
+                 return redirect(reverse("news_analyser:search"))
         else:
+            print("No news found and no keywords provided.")
             messages.info(request, "No news found for the given keywords.")
             return redirect(reverse("news_analyser:search"))
 # if there are multiple keywords, then the news should be the intersection of the news

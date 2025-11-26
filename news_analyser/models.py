@@ -1,6 +1,5 @@
 """
 Django models for the News Analyser application.
-
 This module defines the database models for storing news articles,
 keywords, stocks, user profiles, and related metadata.
 """
@@ -88,11 +87,11 @@ class News(models.Model):
         mentioned_tickers (list): Stock symbols mentioned in article
         raw_gemini_response (dict): Full API response for debugging
     """
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=500)
     content_summary = models.TextField()
     content = models.TextField(null=True, blank=True)
     date = models.DateTimeField(default=timezone.now, db_index=True)
-    link = models.CharField(max_length=200, unique=True, db_index=True)
+    link = models.CharField(max_length=500, unique=True, db_index=True)
     keyword = models.ForeignKey(
         Keyword, on_delete=models.CASCADE, related_name="news", db_index=True)
     impact_rating = models.FloatField(default=0, db_index=True)

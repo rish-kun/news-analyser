@@ -27,9 +27,19 @@ env = environ.Env(
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Gemini API Keys
-GEMINI_API_KEY = env('GEMINI_API_KEY')
-GEMINI_API_KEY_2 = env('GEMINI_API_KEY_2', default=None)
-GEMINI_API_KEY_3 = env('GEMINI_API_KEY_3', default=None)
+# Gemini API Keys
+GEMINI_API_KEYS = []
+# Dynamically load all environment variables starting with GEMINI_API_KEY
+for key, value in os.environ.items():
+    if key.startswith('GEMINI_API_KEY') and value:
+        GEMINI_API_KEYS.append((key, value))
+
+# Sort by key name to ensure deterministic order (e.g. GEMINI_API_KEY, GEMINI_API_KEY_2, etc.)
+GEMINI_API_KEYS.sort(key=lambda x: x[0])
+GEMINI_API_KEYS = [value for _, value in GEMINI_API_KEYS]
+
+# For backward compatibility if needed
+GEMINI_API_KEY = GEMINI_API_KEYS[0] if GEMINI_API_KEYS else None
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/

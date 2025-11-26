@@ -4,7 +4,7 @@ from .models import News
 from google import genai
 import logging
 import json
-from blackbox.settings import GEMINI_API_KEY, GEMINI_API_KEY_2, GEMINI_API_KEY_3
+from blackbox.settings import GEMINI_API_KEYS
 from .prompts import news_analysis_prompt
 from .exceptions import (
     GeminiAPIError,
@@ -14,6 +14,36 @@ from .exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def strip_markdown_json(text):
+    """
+    Strip markdown code block syntax from JSON responses.
+    
+    Handles responses like:
+    ```json
+    {"key": "value"}
+    ```
+    
+    Args:
+        text (str): Response text that may contain markdown code blocks
+        
+    Returns:
+        str: Cleaned JSON text
+    """
+    text = text.strip()
+    # Remove markdown code block markers
+    if text.startswith('```'):
+        # Find the end of the opening marker (```json or just ```)
+        first_newline = text.find('\n')
+        if first_newline != -1:
+            text = text[first_newline + 1:]
+        
+        # Remove closing ```
+        if text.endswith('```'):
+            text = text[:-3]
+    
+    return text.strip()
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -38,8 +68,8 @@ def analyse_news_task(self, news_id):
         logger.debug(f"Retrieved news object: {news.title[:50]}...")
 
         # Try primary API key first
-        api_keys = [GEMINI_API_KEY, GEMINI_API_KEY_2, GEMINI_API_KEY_3]
-        api_keys = [key for key in api_keys if key]  # Filter out None values
+        api_keys = GEMINI_API_KEYS
+        # api_keys = [key for key in api_keys if key]  # Filter out None values - already handled in settings
 
         if not api_keys:
             logger.critical("No Gemini API keys configured!")
@@ -64,7 +94,9 @@ def analyse_news_task(self, news_id):
                 )
 
                 analysis = client.models.generate_content(
-                    model="gemini-2.5-flash-preview-05-20",
+                    # model="gemini-2.5-flash",
+                    # model="gemini-3-pro-preview",
+                    model="gemini-flash-lite-latest",
                     contents=prompt
                 )
 
@@ -73,8 +105,12 @@ def analyse_news_task(self, news_id):
                 logger.debug(f"Gemini response: {response_text[:200]}...")
 
                 try:
+                    # Strip markdown code blocks if present
+                    cleaned_response = strip_markdown_json(response_text)
+                    logger.debug(f"Cleaned response: {cleaned_response[:200]}...")
+                    
                     # Try to parse as JSON
-                    analysis_data = json.loads(response_text)
+                    analysis_data = json.loads(cleaned_response)
 
                     # Extract and validate sentiment score
                     sentiment_score = float(analysis_data.get('sentiment', 0))
